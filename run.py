@@ -13,7 +13,7 @@ USE_RELOADER = False
 
 # Sever ip:port.  Use HOST = 0.0.0.0 for access outside dev machine
 HOST = "0.0.0.0"
-PORT = 5000
+PORT = 5001
 
 # Enable server to use multiple threads
 THREADED = True

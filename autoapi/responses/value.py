@@ -28,3 +28,138 @@ class ValueResponse(ResponseObjectInterface):
     @staticmethod
     def content_type() -> str:
         return mimetypes.MimeTypes().types_map[1]['.json']
+
+
+class ListResponse(ResponseObjectInterface):
+    class ListResponseSchema(Schema):
+        value = fields.List(fields.Field(),
+                            required=True,
+                            description='List Response')
+
+    def __init__(self, value: List):
+        super().__init__()
+        self.value: List = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema():
+        return ListResponse.ListResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1]['.json']
+
+
+class DictResponse(ResponseObjectInterface):
+    class DictResponseSchema(Schema):
+        value = fields.Dict(required=True,
+                            description='DIct Response')
+
+    def __init__(self,
+                 value: dict):
+        super().__init__()
+        self.value: dict = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema():
+        return DictResponse.DictResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1]['.json']
+
+
+class JSONResponse(ResponseObjectInterface):
+    class JSONResponseSchema(Schema):
+        value = fields.Field(required=True,
+                             validate=(lambda x: type(x) in [dict, list]),
+                             description='JSON Response')
+
+    def __init__(self,
+                 value: Union[List, Dict]):
+        super().__init__()
+        self.value: Union[List, Dict] = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema():
+        return JSONResponse.JSONResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1]['.json']
+
+
+class StringResponse(ResponseObjectInterface):
+    class StringResponseSchema(Schema):
+        value = fields.String(required=True,
+                              description='String Response')
+
+    def __init__(self,
+                 value: str):
+        super().__init__()
+        self.value: str = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema():
+        return StringResponse.StringResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1]['.txt']
+
+
+class IntegerResponse(ResponseObjectInterface):
+    class IntegerResponseSchema(Schema):
+        value = fields.Integer(required=True,
+                               description='Integer Response')
+
+    def __init__(self,
+                 value: int):
+        super().__init__()
+        self.value: int = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema():
+        return IntegerResponse.IntegerResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1]['.txt']
+
+
+response_object_type_map: Dict = {
+    int: IntegerResponse,
+    "int": IntegerResponse,
+    str: StringResponse,
+    "str": StringResponse,
+    list: ListResponse,
+    List: ListResponse,
+    "List": ListResponse,
+    dict: DictResponse,
+    Dict: DictResponse,
+    "Dict": DictResponse
+}

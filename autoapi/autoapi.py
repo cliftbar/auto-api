@@ -11,6 +11,7 @@ from marshmallow.fields import Field
 
 from autoapi.encoder import AutoAPIObjEncoder
 from autoapi.extensions import ResponseObjectInterface
+from autoapi.responses.value import response_object_type_map
 
 
 class AutoAPI:
@@ -75,20 +76,33 @@ class AutoAPI:
 
         return api_spec
 
-    def build_path(self, api_spec: APISpec, path_url: str, http_verb: str, response_code: int, parameter_object: Union[Dict, Schema] = None, response_object: ResponseObjectInterface = None):
+    def build_path(self,
+                   api_spec: APISpec,
+                   path_url: str,
+                   http_verb: str,
+                   response_code: int,
+                   summary: str = None,
+                   description: str = None,
+                   parameter_object: Union[Dict, Schema] = None,
+                   response_object: ResponseObjectInterface = None):
         param_schema = Schema.from_dict(fields=parameter_object, name='ParameterSchema')
+
+        if response_object in response_object_type_map.keys():
+            response_object = response_object_type_map[response_object]
+        elif getattr(response_object, "_name", None) in response_object_type_map.keys():
+            response_object = response_object_type_map[response_object._name]
+
+        schema = response_object
+        try:
+            schema = response_object.to_schema()
+        except AttributeError as ae:
+            pass
 
         content_type = mimetypes.MimeTypes().types_map[1]['.txt']
         try:
             content_type = response_object.content_type()
         except AttributeError as ae:
             content_type = magic.from_buffer(str(response_object), mime=True)
-
-        schema = response_object.__name__
-        try:
-            schema = response_object.to_schema()
-        except AttributeError as ae:
-            pass
 
         operations: Dict = {
             http_verb.lower(): {
@@ -104,13 +118,15 @@ class AutoAPI:
                 },
                 "parameters": [
                     {"in": "query", "schema": param_schema}
-                ]
+                ],
+                "summary": summary,
+                "description": description
             }
         }
 
         api_spec.path(
             path=path_url,
-            operations=operations
+            operations=operations,
         )
         yml = api_spec.to_yaml()
-        # return api_spec
+        return api_spec

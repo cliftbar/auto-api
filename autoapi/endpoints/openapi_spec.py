@@ -39,7 +39,16 @@ class OpenAPISpec(Resource):
                     autoapi_spec_parameters = getattr(value_func, AutoAPI.function_key)
                     response_schemas = autoapi_spec_parameters.get("response_schemas")
                     parameter_schema = autoapi_spec_parameters.get("parameter_schema")
-                    autoapi.build_path(autoapi_spec, key, method, 200, parameter_schema, response_schemas["200"])
+                    summary = autoapi_spec_parameters.get("summary")
+                    description = autoapi_spec_parameters.get("description")
+                    autoapi.build_path(autoapi_spec,
+                                       key,
+                                       method,
+                                       200,
+                                       summary,
+                                       description,
+                                       parameter_schema,
+                                       response_schemas["200"])
 
         ret = autoapi_spec.to_dict()
         if response_type.lower() in ["yml", "yaml"]:

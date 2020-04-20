@@ -3,7 +3,7 @@ from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import use_kwargs
 
-from autoapi.decorators import introspection
+from autoapi.decorators import autodoc
 from autoapi.responses import ValueResponse
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class Status(Resource):
         "log_text": fields.String(required=False, description='Extra log_text', component_id="log_text")
     }
 
-    @introspection(get_arguments, summary='Status Endpoint', description='Status Endpoint, logs a message and responds')
+    @autodoc(get_arguments, summary='Status Endpoint', description='Status Endpoint, logs a message and responds')
     @use_kwargs(get_arguments)
     def get(self, text: str = None) -> ValueResponse:
         log_text: str = "status check OK"

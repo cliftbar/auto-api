@@ -9,7 +9,7 @@ from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import use_kwargs
 
-from autoapi.decorators import introspection
+from autoapi.decorators import autodoc
 from autoapi.autoapi import AutoAPI
 from autoapi.responses import ValueResponse
 
@@ -21,7 +21,7 @@ class OpenAPISpec(Resource):
         'response_type': fields.String(required=False, description="Format to return the OpenAPI spec as; yaml or json", doc_default='json')
     }
 
-    @introspection(get_arguments, summary='OpenAPI Documentation Endpoint', description='Returns the OpenAPI Spec')
+    @autodoc(get_arguments, summary='OpenAPI Documentation Endpoint', description='Returns the OpenAPI Spec')
     @use_kwargs(get_arguments)
     def get(self, response_type: str = 'json') -> Dict:
         autoapi: AutoAPI = current_app.config[AutoAPI.config_key]
@@ -42,6 +42,8 @@ class OpenAPISpec(Resource):
                     parameter_schema = autoapi_spec_parameters.get("parameter_schema")
                     summary = autoapi_spec_parameters.get("summary")
                     description = autoapi_spec_parameters.get("description")
+                    tags = autoapi_spec_parameters.get("tags")
+
                     autoapi.build_path(autoapi_spec,
                                        key,
                                        method,
@@ -49,7 +51,8 @@ class OpenAPISpec(Resource):
                                        summary,
                                        description,
                                        parameter_schema,
-                                       response_schemas["200"])
+                                       response_schemas["200"],
+                                       tags)
 
         ret = autoapi_spec.to_dict()
         if response_type.lower() in ["yml", "yaml"]:

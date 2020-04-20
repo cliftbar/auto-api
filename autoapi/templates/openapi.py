@@ -57,12 +57,12 @@ window.onload = function() {
     deepLinking: true,
     presets: [
       SwaggerUIBundle.presets.apis,
-      SwaggerUIStandalonePreset
+      //SwaggerUIStandalonePreset
     ],
     plugins: [
       SwaggerUIBundle.plugins.DownloadUrl
     ],
-    layout: "StandaloneLayout"
+    //layout: "StandaloneLayout"
   })
   window.ui = ui
 }

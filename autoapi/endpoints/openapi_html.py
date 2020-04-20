@@ -1,5 +1,5 @@
 import logging
-from typing import Dict
+from typing import Dict, List
 
 from apispec import APISpec
 from flask import current_app, Response
@@ -9,7 +9,7 @@ from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import use_kwargs
 
-from autoapi.decorators import introspection
+from autoapi.decorators import autodoc
 from autoapi.autoapi import AutoAPI
 from autoapi.responses import ValueResponse
 from autoapi.templates.openapi import generate_template_from_dict
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAPIHTML(Resource):
-    @introspection(summary='OpenAPI HTML Documentation Endpoint', description='Returns the OpenAPI HTML')
+    @autodoc(summary='OpenAPI HTML Documentation Endpoint', description='Returns the OpenAPI HTML')
     def get(self) -> str:
         autoapi: AutoAPI = current_app.config[AutoAPI.config_key]
         autoapi_spec: APISpec = autoapi.start_spec()
@@ -38,7 +38,16 @@ class OpenAPIHTML(Resource):
                     parameter_schema = autoapi_spec_parameters.get("parameter_schema")
                     summary: str = autoapi_spec_parameters.get("summary")
                     description: str = autoapi_spec_parameters.get("description")
-                    autoapi.build_path(autoapi_spec, key, method, 200, summary, description, parameter_schema, response_schemas["200"])
+                    tags: List[Dict] = autoapi_spec_parameters.get("tags")
+                    autoapi.build_path(autoapi_spec,
+                                       key,
+                                       method,
+                                       200,
+                                       summary,
+                                       description,
+                                       parameter_schema,
+                                       response_schemas["200"],
+                                       tags)
 
         ret: Dict = autoapi_spec.to_dict()
 

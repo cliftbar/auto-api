@@ -32,7 +32,7 @@ class ValueResponse(ResponseObjectInterface):
 
 class ListResponse(ResponseObjectInterface):
     class ListResponseSchema(Schema):
-        value = fields.List(fields.Field(),
+        value = fields.List(fields.Raw(),
                             required=True,
                             description='List Response')
 
@@ -51,13 +51,13 @@ class ListResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.json']
+        return mimetypes.MimeTypes().types_map[1]['.txt']
 
 
 class DictResponse(ResponseObjectInterface):
     class DictResponseSchema(Schema):
-        value = fields.Dict(required=True,
-                            description='DIct Response')
+        response = fields.Dict(required=True,
+                               description='Dict Response')
 
     def __init__(self,
                  value: dict):

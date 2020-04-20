@@ -1,6 +1,6 @@
 import mimetypes
 from http.client import responses
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 from winmagic import magic
 from apispec import APISpec
@@ -18,8 +18,9 @@ class AutoAPI:
     config_key: str = "AutoAPI"
     function_key = "autoapi_spec"
 
-    def __init__(self, app_api: Api, title, version, openapi_version, info: Dict = None):
+    def __init__(self, app_api: Api, title, version, openapi_version, info: Dict = None, default_tag: Dict = None):
         self.app_api = app_api
+        self.default_tag: Dict = default_tag or {"name": title}
 
         self.apispec_options: Dict = {
             "title": title,
@@ -84,7 +85,8 @@ class AutoAPI:
                    summary: str = None,
                    description: str = None,
                    parameter_object: Union[Dict, Schema] = None,
-                   response_object: ResponseObjectInterface = None):
+                   response_object: ResponseObjectInterface = None,
+                   tags: List[Dict] = None):
         param_schema = Schema.from_dict(fields=parameter_object, name='ParameterSchema')
 
         if response_object in response_object_type_map.keys():
@@ -120,7 +122,8 @@ class AutoAPI:
                     {"in": "query", "schema": param_schema}
                 ],
                 "summary": summary,
-                "description": description
+                "description": description,
+                "tags": tags or [self.default_tag]
             }
         }
 

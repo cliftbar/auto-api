@@ -1,9 +1,9 @@
-from typing import Callable, Dict
+from typing import Callable, Dict, List
 
 from autoapi.autoapi import AutoAPI
 
 
-def introspection(parameter_schema: Dict = None, summary: str = None, description: str = None):
+def autodoc(parameter_schema: Dict = None, summary: str = None, description: str = None, tags: List[Dict] = None):
     if parameter_schema is None:
         parameter_schema = {}
 
@@ -17,6 +17,9 @@ def introspection(parameter_schema: Dict = None, summary: str = None, descriptio
 
         if description is not None:
             autoapi_spec_parameters['description'] = description
+
+        if tags is not None:
+            autoapi_spec_parameters['tags'] = tags
 
         autoapi_spec_parameters["parameter_schema"] = parameter_schema
 

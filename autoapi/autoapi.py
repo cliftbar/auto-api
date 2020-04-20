@@ -2,7 +2,7 @@ import mimetypes
 from http.client import responses
 from typing import Dict, Union
 
-import magic
+from winmagic import magic
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from flask_restful import Api

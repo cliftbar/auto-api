@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 
 from apispec import APISpec
 from flask import current_app
@@ -22,7 +23,7 @@ class OpenAPISpec(Resource):
 
     @introspection(get_arguments, summary='OpenAPI Documentation Endpoint', description='Returns the OpenAPI Spec')
     @use_kwargs(get_arguments)
-    def get(self, response_type: str = 'json') -> ValueResponse:
+    def get(self, response_type: str = 'json') -> Dict:
         autoapi: AutoAPI = current_app.config[AutoAPI.config_key]
         autoapi_spec: APISpec = autoapi.start_spec()
 
@@ -54,4 +55,4 @@ class OpenAPISpec(Resource):
         if response_type.lower() in ["yml", "yaml"]:
             ret = autoapi_spec.to_yaml()
 
-        return ValueResponse(ret)
+        return ret

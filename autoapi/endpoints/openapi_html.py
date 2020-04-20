@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class OpenAPIHTML(Resource):
-    # @introspection(summary='OpenAPI HTML Documentation Endpoint', description='Returns the OpenAPI HTML')
+    @introspection(summary='OpenAPI HTML Documentation Endpoint', description='Returns the OpenAPI HTML')
     def get(self) -> str:
         autoapi: AutoAPI = current_app.config[AutoAPI.config_key]
         autoapi_spec: APISpec = autoapi.start_spec()

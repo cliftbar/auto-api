@@ -6,21 +6,20 @@ from webargs.flaskparser import use_kwargs
 from autoapi.decorators import autodoc
 from autoapi.responses import ValueResponse
 
-logger = logging.getLogger(__name__)
-
 
 class Status(Resource):
     get_arguments = {
-        "text": fields.String(required=False, description='Extra TextReturn', component_id="Text_id"),
-        "log_text": fields.String(required=False, description='Extra log_text', component_id="log_text")
+        "text": fields.String(required=False, description='Text to return', doc_default="Hello AutoAPI")
     }
 
-    @autodoc(get_arguments, summary='Status Endpoint', description='Status Endpoint, logs a message and responds')
-    @use_kwargs(get_arguments)
-    def get(self, text: str = None) -> ValueResponse:
+    @autodoc(parameter_schema=get_arguments,
+             summary="Status Endpoint",
+             description="Status Endpoint, logs a message and responds")
+    @use_kwargs(get_arguments, location="query")
+    def get(self, text: str = "Hello AutoAPI") -> ValueResponse:
         log_text: str = "status check OK"
+
         if text is not None:
             log_text = f"{log_text}: {text}"
-        logger.info(log_text)
 
         return ValueResponse(log_text)

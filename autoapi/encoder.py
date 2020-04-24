@@ -2,8 +2,11 @@ import flask
 
 
 class AutoAPIObjEncoder(flask.json.JSONEncoder):
-    def default(self, obj):
-        if 'to_dict' in dir(obj):
+    """
+    Extension of flask.json.JSONEncoder to allow custom "to_dict" methods
+    """
+    def default(self, obj: object):
+        if hasattr(obj, "to_dict") and callable(obj.to_dict):
             return obj.to_dict()
 
         return super(obj)

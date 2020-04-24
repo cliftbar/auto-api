@@ -1,18 +1,41 @@
 import mimetypes
+from abc import ABC, abstractmethod
 from typing import Union, Dict, List
 
-from autoapi.extensions import ResponseObjectInterface
-
 from marshmallow import Schema, fields
+
+
+class ResponseObjectInterface(ABC):
+    """
+    Abstract Response Class.  Extend to create custom response types that can be handled by AutoAPI
+    """
+    @abstractmethod
+    def to_dict(self) -> Dict:
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def to_schema() -> Schema:
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def content_type() -> str:
+        raise NotImplementedError
 
 
 class ValueResponse(ResponseObjectInterface):
     class ValueResponseSchema(Schema):
         value = fields.Field(required=True,
                              validate=(lambda x: type(x) in [int, float, str, bool, dict, list]),
-                             description='General value field, can hold an Integer, Float, String, Boolean, Dictionary, or List')
+                             description=("General value field, can hold an"
+                                          " Integer, Float, String, Boolean, Dictionary, or List"))
 
     def __init__(self, value: Union[float, int, str, bool, List, Dict]):
+        """
+        "General value response, can hold an Integer, Float, String, Boolean, Dictionary, or List"
+        :param value:
+        """
         super().__init__()
         self.value: Union[float, int, str, bool, List, Dict] = value
 
@@ -27,16 +50,20 @@ class ValueResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.json']
+        return mimetypes.MimeTypes().types_map[1][".json"]
 
 
 class ListResponse(ResponseObjectInterface):
     class ListResponseSchema(Schema):
         value = fields.List(fields.Raw(),
                             required=True,
-                            description='List Response')
+                            description="List response field")
 
     def __init__(self, value: List):
+        """
+        "List Response"
+        :param value:
+        """
         super().__init__()
         self.value: List = value
 
@@ -51,16 +78,20 @@ class ListResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.txt']
+        return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
 class DictResponse(ResponseObjectInterface):
     class DictResponseSchema(Schema):
         response = fields.Dict(required=True,
-                               description='Dict Response')
+                               description="Object response field")
 
     def __init__(self,
                  value: dict):
+        """
+        Dictionary response field
+        :param value:
+        """
         super().__init__()
         self.value: dict = value
 
@@ -75,17 +106,21 @@ class DictResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.json']
+        return mimetypes.MimeTypes().types_map[1][".json"]
 
 
 class JSONResponse(ResponseObjectInterface):
     class JSONResponseSchema(Schema):
         value = fields.Field(required=True,
                              validate=(lambda x: type(x) in [dict, list]),
-                             description='JSON Response')
+                             description="JSON response field")
 
     def __init__(self,
                  value: Union[List, Dict]):
+        """
+        "JSON response field"
+        :param value:
+        """
         super().__init__()
         self.value: Union[List, Dict] = value
 
@@ -100,16 +135,20 @@ class JSONResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.json']
+        return mimetypes.MimeTypes().types_map[1][".json"]
 
 
 class StringResponse(ResponseObjectInterface):
     class StringResponseSchema(Schema):
         value = fields.String(required=True,
-                              description='String Response')
+                              description="String response field")
 
     def __init__(self,
                  value: str):
+        """
+        String response field
+        :param value:
+        """
         super().__init__()
         self.value: str = value
 
@@ -124,16 +163,20 @@ class StringResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.txt']
+        return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
 class IntegerResponse(ResponseObjectInterface):
     class IntegerResponseSchema(Schema):
         value = fields.Integer(required=True,
-                               description='Integer Response')
+                               description="Integer response field")
 
     def __init__(self,
                  value: int):
+        """
+        "Integer response field"
+        :param value:
+        """
         super().__init__()
         self.value: int = value
 
@@ -148,12 +191,42 @@ class IntegerResponse(ResponseObjectInterface):
 
     @staticmethod
     def content_type() -> str:
-        return mimetypes.MimeTypes().types_map[1]['.txt']
+        return mimetypes.MimeTypes().types_map[1][".txt"]
+
+
+class FloatResponse(ResponseObjectInterface):
+    class FloatResponseSchema(Schema):
+        value = fields.Float(required=True,
+                             description="Float response field")
+
+    def __init__(self,
+                 value: float):
+        """
+        "Float response field"
+        :param value:
+        """
+        super().__init__()
+        self.value: float = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema():
+        return FloatResponse.FloatResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
 response_object_type_map: Dict = {
     int: IntegerResponse,
     "int": IntegerResponse,
+    float: IntegerResponse,
+    "float": IntegerResponse,
     str: StringResponse,
     "str": StringResponse,
     list: ListResponse,

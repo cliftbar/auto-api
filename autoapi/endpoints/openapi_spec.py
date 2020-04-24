@@ -1,61 +1,41 @@
 import logging
+
 from typing import Dict
 
 from apispec import APISpec
 from flask import current_app
-from flask import url_for
-
 from flask_restful import Resource
-from webargs import fields
-from webargs.flaskparser import use_kwargs
 
 from autoapi.decorators import autodoc
 from autoapi.autoapi import AutoAPI
-from autoapi.responses import ValueResponse
+from autoapi.responses import DictResponse
 
 logger = logging.getLogger(__name__)
 
 
-class OpenAPISpec(Resource):
-    get_arguments = {
-        'response_type': fields.String(required=False, description="Format to return the OpenAPI spec as; yaml or json", doc_default='json')
-    }
+class OpenAPISpecJSON(Resource):
+    @autodoc(summary="OpenAPI JSON Documentation Endpoint",
+             description="Returns the OpenAPI Spec in JSON format",
+             tags=[{"name": "AutoAPI"}])
+    def get(self) -> Dict:
+        auto_app: AutoAPI = current_app.config[AutoAPI.config_key].auto_api
 
-    @autodoc(get_arguments, summary='OpenAPI Documentation Endpoint', description='Returns the OpenAPI Spec')
-    @use_kwargs(get_arguments)
-    def get(self, response_type: str = 'json') -> Dict:
-        autoapi: AutoAPI = current_app.config[AutoAPI.config_key]
-        autoapi_spec: APISpec = autoapi.start_spec()
+        autoapi_spec = auto_app.application_to_apispec(current_app)
 
-        endpoint: Resource
-        for name, view in current_app.view_functions.items():
-            if not hasattr(view, 'methods'):
-                continue
-            for method in view.methods:
+        ret: Dict = autoapi_spec.to_dict()
 
-                key = url_for(view.view_class.endpoint)  # f"{url_for(view.view_class.endpoint)}: {method}"
-                value_func = getattr(view.view_class, method.lower())
+        return ret
 
-                if hasattr(value_func, AutoAPI.function_key):
-                    autoapi_spec_parameters = getattr(value_func, AutoAPI.function_key)
-                    response_schemas = autoapi_spec_parameters.get("response_schemas")
-                    parameter_schema = autoapi_spec_parameters.get("parameter_schema")
-                    summary = autoapi_spec_parameters.get("summary")
-                    description = autoapi_spec_parameters.get("description")
-                    tags = autoapi_spec_parameters.get("tags")
 
-                    autoapi.build_path(autoapi_spec,
-                                       key,
-                                       method,
-                                       200,
-                                       summary,
-                                       description,
-                                       parameter_schema,
-                                       response_schemas["200"],
-                                       tags)
+class OpenAPISpecYAML(Resource):
+    @autodoc(summary="OpenAPI Yaml Documentation Endpoint",
+             description="Returns the OpenAPI Spec in Yaml format",
+             tags=[{"name": "AutoAPI"}])
+    def get(self) -> str:
+        auto_app: AutoAPI = current_app.config[AutoAPI.config_key].auto_api
 
-        ret = autoapi_spec.to_dict()
-        if response_type.lower() in ["yml", "yaml"]:
-            ret = autoapi_spec.to_yaml()
+        autoapi_spec: APISpec = auto_app.application_to_apispec(current_app)
+
+        ret: str = autoapi_spec.to_yaml()
 
         return ret

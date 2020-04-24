@@ -1,4 +1,4 @@
-#!/usr/bin/python
+# Adapted from python made by Otto Seiskary
 #
 #  Copyright 2017 Otto Seiskari
 #  Licensed under the Apache License, Version 2.0.
@@ -8,15 +8,13 @@
 #  https://github.com/swagger-api/swagger-ui/blob/4f1772f6544699bc748299bd65f7ae2112777abc/dist/index.html
 #  (Copyright 2017 SmartBear Software, Licensed under Apache 2.0)
 #
-"""
-Usage:
-    python swagger-yaml-to-html.py < /path/to/api.yaml > doc.html
-"""
-from typing import Dict, List, Any, Union, Hashable
+import yaml
+import json
+import sys
 
-import yaml, json, sys
+from typing import Dict
 
-TEMPLATE = """
+OPENAPI_TEMPLATE: str = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -78,14 +76,18 @@ def generate_template_from_yaml(spec_yaml: str) -> str:
 
 
 def generate_template_from_dict(spec_dict: Dict) -> str:
-    return TEMPLATE % json.dumps(spec_dict)
+    return OPENAPI_TEMPLATE % json.dumps(spec_dict)
 
 
 def main():
-    spec_yaml = sys.stdin.read()
-    html_template = generate_template_from_yaml(spec_yaml)
+    spec_yaml: str = sys.stdin.read()
+    html_template: str = generate_template_from_yaml(spec_yaml)
     print(html_template)
 
 
 if __name__ == "__main__":
+    """
+    Usage:
+        python openapi.py < /path/to/api.yaml > doc.html
+    """
     main()

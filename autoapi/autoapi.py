@@ -78,7 +78,7 @@ class AutoAPI:
         :param tags: Tags for categorizing the path.  Defaults to the AutoAPI App Title
         :return: The same APISpec object passed in, but now with a new path register
         """
-        param_schema = Schema.from_dict(fields=parameter_object, name="ParameterSchema")
+        param_schema: Schema = Schema.from_dict(fields=parameter_object, name="ParameterSchema")
 
         if response_object in response_object_type_map.keys():
             response_object = response_object_type_map[response_object]
@@ -136,8 +136,7 @@ class AutoAPI:
                 continue
             method: str
             for method in view.methods:
-
-                key: str = url_for(view.view_class.endpoint)  # f"{url_for(view.view_class.endpoint)}: {method}"
+                key: str = url_for(view.view_class.endpoint)
                 value_func: Callable = getattr(view.view_class, method.lower())
 
                 if hasattr(value_func, AutoAPI.function_key):

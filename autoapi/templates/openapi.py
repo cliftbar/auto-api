@@ -71,11 +71,21 @@ window.onload = function() {
 
 
 def generate_template_from_yaml(spec_yaml: str) -> str:
+    """
+    Creates the OpenAPI HTML page from a YAML input
+    :param spec_yaml:
+    :return:
+    """
     spec: Dict = yaml.load(spec_yaml, Loader=yaml.FullLoader)
     return generate_template_from_dict(spec)
 
 
 def generate_template_from_dict(spec_dict: Dict) -> str:
+    """
+        Creates the OpenAPI HTML page from a JSON input
+        :param spec_yaml:
+        :return:
+        """
     return OPENAPI_TEMPLATE % json.dumps(spec_dict)
 
 

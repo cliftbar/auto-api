@@ -11,17 +11,17 @@ class ResponseObjectInterface(ABC):
     """
     @abstractmethod
     def to_dict(self) -> Dict:
-        raise NotImplementedError
+        pass
 
     @staticmethod
     @abstractmethod
     def to_schema() -> Schema:
-        raise NotImplementedError
+        pass
 
     @staticmethod
     @abstractmethod
     def content_type() -> str:
-        raise NotImplementedError
+        pass
 
 
 class ValueResponse(ResponseObjectInterface):
@@ -40,24 +40,34 @@ class ValueResponse(ResponseObjectInterface):
         self.value: Union[float, int, str, bool, List, Dict] = value
 
     def to_dict(self) -> Dict:
+        """
+        Return a representation of the Response Object as a dictionary for json serialization
+        :return:
+        """
         return {
             "value": self.value
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Schema:
+        """
+        Return a Schema representation of the Response Object
+        :return:
+        """
         return ValueResponse.ValueResponseSchema()
 
     @staticmethod
     def content_type() -> str:
+        """
+        Return the Content Type for the Response Object for HTTP serialization
+        :return:
+        """
         return mimetypes.MimeTypes().types_map[1][".json"]
 
 
 class ListResponse(ResponseObjectInterface):
     class ListResponseSchema(Schema):
-        value = fields.List(fields.Raw(),
-                            required=True,
-                            description="List response field")
+        value = fields.List(fields.Raw(), required=True, description="List response field")
 
     def __init__(self, value: List):
         """
@@ -73,7 +83,7 @@ class ListResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Schema:
         return ListResponse.ListResponseSchema()
 
     @staticmethod
@@ -83,17 +93,15 @@ class ListResponse(ResponseObjectInterface):
 
 class DictResponse(ResponseObjectInterface):
     class DictResponseSchema(Schema):
-        response = fields.Dict(required=True,
-                               description="Object response field")
+        response = fields.Dict(required=True, description="Object response field")
 
-    def __init__(self,
-                 value: dict):
+    def __init__(self, value: Dict):
         """
         Dictionary response field
         :param value:
         """
         super().__init__()
-        self.value: dict = value
+        self.value: Dict = value
 
     def to_dict(self) -> Dict:
         return {
@@ -101,7 +109,7 @@ class DictResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Schema:
         return DictResponse.DictResponseSchema()
 
     @staticmethod
@@ -115,8 +123,7 @@ class JSONResponse(ResponseObjectInterface):
                              validate=(lambda x: type(x) in [dict, list]),
                              description="JSON response field")
 
-    def __init__(self,
-                 value: Union[List, Dict]):
+    def __init__(self, value: Union[List, Dict]):
         """
         "JSON response field"
         :param value:
@@ -130,7 +137,7 @@ class JSONResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Dict:
         return JSONResponse.JSONResponseSchema()
 
     @staticmethod
@@ -140,11 +147,9 @@ class JSONResponse(ResponseObjectInterface):
 
 class StringResponse(ResponseObjectInterface):
     class StringResponseSchema(Schema):
-        value = fields.String(required=True,
-                              description="String response field")
+        value = fields.String(required=True, description="String response field")
 
-    def __init__(self,
-                 value: str):
+    def __init__(self, value: str):
         """
         String response field
         :param value:
@@ -158,7 +163,7 @@ class StringResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Schema:
         return StringResponse.StringResponseSchema()
 
     @staticmethod
@@ -168,11 +173,9 @@ class StringResponse(ResponseObjectInterface):
 
 class IntegerResponse(ResponseObjectInterface):
     class IntegerResponseSchema(Schema):
-        value = fields.Integer(required=True,
-                               description="Integer response field")
+        value = fields.Integer(required=True, description="Integer response field")
 
-    def __init__(self,
-                 value: int):
+    def __init__(self, value: int):
         """
         "Integer response field"
         :param value:
@@ -186,7 +189,7 @@ class IntegerResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Schema:
         return IntegerResponse.IntegerResponseSchema()
 
     @staticmethod
@@ -196,11 +199,9 @@ class IntegerResponse(ResponseObjectInterface):
 
 class FloatResponse(ResponseObjectInterface):
     class FloatResponseSchema(Schema):
-        value = fields.Float(required=True,
-                             description="Float response field")
+        value = fields.Float(required=True, description="Float response field")
 
-    def __init__(self,
-                 value: float):
+    def __init__(self, value: float):
         """
         "Float response field"
         :param value:
@@ -214,7 +215,7 @@ class FloatResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema():
+    def to_schema() -> Schema:
         return FloatResponse.FloatResponseSchema()
 
     @staticmethod

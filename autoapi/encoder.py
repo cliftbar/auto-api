@@ -1,4 +1,5 @@
 import flask
+from marshmallow import Schema
 
 
 class AutoAPIObjEncoder(flask.json.JSONEncoder):

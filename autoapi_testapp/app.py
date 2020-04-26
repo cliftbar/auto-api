@@ -23,7 +23,16 @@ def handle_request_parsing_error(err, req, schema, *, error_status_code, error_h
     """
     abort(error_status_code, errors=err.messages)
 
+
+####################
+# Status Endpoints #
+####################
 endpoint_prefix: str = "status"
 api.add_resource(Status, f"/{endpoint_prefix}/status", endpoint=f"Status_{endpoint_prefix}")
+
+##################
+# Math Endpoints #
+##################
+endpoint_prefix: str = "math"
 api.add_resource(AddTwo, f"/{endpoint_prefix}/add", endpoint=f"AddTwo_{endpoint_prefix}")
 api.add_resource(MultiplyTwo, f"/{endpoint_prefix}/multiply", endpoint=f"MultiplyTwo_{endpoint_prefix}")

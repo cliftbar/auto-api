@@ -11,7 +11,7 @@ from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 
 from autoapi.responses import ResponseObjectInterface
-from autoapi.responses.responses import response_object_type_map, ValueResponse
+from autoapi.responses.responses import response_object_type_map
 
 
 class AutoAPI:
@@ -97,13 +97,16 @@ class AutoAPI:
         for loc, argmap in location_argmaps.items():
             if loc not in location_schemas:
                 location_schemas[loc] = {}
-
-            location_schemas[loc] = dict2schema(argmap)
+            # TODO: Source a better Schema Name
+            url_name: str = "".join([part.title() for part in path_url.split("/")])
+            schema_name: str = f"{url_name}{http_verb.title()}{loc.title()}Schema"
+            location_schemas[loc] = Schema.from_dict(argmap, name=schema_name)
+            # location_schemas[loc] = autodict2schema(argmap, schema_name)
 
         class ParameterSchema(Schema):
             class Meta:
                 include = {
-                    loc: fields.Nested(schema, location=loc)
+                    loc: fields.Nested(schema, location=loc, name=loc)
                     for loc, schema
                     in location_schemas.items()
                 }
@@ -124,7 +127,7 @@ class AutoAPI:
         except AttributeError as ae:
             content_type = mimetypes.MimeTypes().types_map[1][".txt"]
             # content_type = magic.from_buffer(str(response_object), mime=True)
-
+        parameter_schema = ParameterSchema()
         operations: Dict = {
             http_verb.lower(): {
                 "responses": {
@@ -137,7 +140,7 @@ class AutoAPI:
                         }
                     }
                 },
-                "parameters": [{"in": "query", "schema": ParameterSchema()}],
+                "parameters": [{"in": "query", "name": "test", "schema": parameter_schema}],
                 "summary": summary,
                 "description": description,
                 "tags": tags or [self.default_tag]

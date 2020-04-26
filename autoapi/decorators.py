@@ -43,3 +43,32 @@ def autodoc(parameter_schema: Dict = None,
 
         return func
     return autodoc_wrapper
+
+
+def override_webargs_flaskparser():
+    import webargs.flaskparser as fp
+
+    def autoapi_use_args(argmap,
+                         req=None,
+                         *args,
+                         location=None,
+                         as_kwargs=False,
+                         validate=None,
+                         error_status_code=None,
+                         error_headers=None):
+        for arg in argmap.values():
+            arg.metadata["location"] = location
+
+        return fp.parser.use_args(argmap, req, *args,
+                                  location=location,
+                                  as_kwargs=as_kwargs,
+                                  validate=validate,
+                                  error_status_code=error_status_code,
+                                  error_headers=error_headers)
+
+    def autoapi_use_kwargs(*args, **kwargs) -> Callable:
+        kwargs["as_kwargs"] = True
+        return autoapi_use_args(*args, **kwargs)
+
+    fp.use_args = autoapi_use_args
+    fp.use_kwargs = autoapi_use_kwargs

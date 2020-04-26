@@ -58,13 +58,13 @@ class MinimalStatus(Resource):
 
 
 class IntrospectionStatus(Resource):
-    get_query_arguments = {
-        "text": fields.String(required=False, description='Text to return', doc_default="Hello AutoAPI")
+    post_query_arguments = {
+        "text": fields.String(required=False)
     }
 
     @autodoc()
-    @use_kwargs(get_query_arguments, location="query")
-    def get(self, text: str = "Hello AutoAPI") -> str:
+    @use_kwargs(post_query_arguments, location="json")
+    def post(self, text: str = "Hello AutoAPI") -> str:
         ret_text: str = "status check OK"
 
         if text is not None:

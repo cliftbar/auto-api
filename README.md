@@ -22,27 +22,41 @@ spec: AutoAPIApp = AutoAPIApp(api, "AutoAPI Test App", "1.0.0", "3.0.0")
 After that, all that is *required* is adding the `@autodoc` decorator to an existing Resource endpoint.
 
 ```python
-class Status(Resource):
+class MinimalStatus(Resource):
     get_query_arguments = {
         "text": fields.String(required=False)
     }
 
-    @autodoc() # add new decorator
+    @autodoc()
     @use_kwargs(get_query_arguments)
-    def get(self, text=None):
-        ret_text: str = "status check OK"
-        if text is not None:
-            ret_text = f"{text}: {text or 'Hello AutoAPI'}"
-
-        return ret_text
+    def get(self, text):
+        return text
 ```
-
 which will mark the endpoint for inclusion in the OpenAPI spec.  In this example, the spec information
 will be pretty limited, but will still have the API url, argument, and a default value.
 
-More information can be provided in the webargs fields, autodoc tag, and use_kwargs tag,
-as well has gleaned from better type hinting
+With more complete python annotations, more information can be gleaned:
+```python
+class IntrospectionStatus(Resource):
+    post_query_arguments = {
+        "text": fields.String(required=False)
+    }
 
+    @autodoc()
+    @use_kwargs(post_query_arguments, location="json")
+    def post(self, text: str = "Hello AutoAPI") -> str:
+        ret_text: str = "status check OK"
+
+        if text is not None:
+            ret_text = f"{ret_text}: {text}"
+
+        return ret_text
+```
+From this the APISpec also get the parameter type, default value, and API response type.  It does not get the parameter
+location yet though, that takes more aguements to autodoc.
+
+Filling in more information in the webargs fields, autodoc decorator, use_kwargs decorator, and using one of the
+AutoAPI response classes for type annotation and  gives even better information:
 ```python
 class Status(Resource):
     get_query_arguments = {
@@ -53,12 +67,12 @@ class Status(Resource):
              summary="Status Endpoint",
              description="Status Endpoint, responds with a message made from the input string")
     @use_kwargs(get_query_arguments, location="query")
-    def get(self, text: str = None) -> str:
+    def get(self, text: str = None) -> ValueResponse:
         log_text: str = "status check OK"
 
         log_text = f"{log_text}: {text or 'Hello AutoAPI'}"
 
-        return str(log_text)
+        return ValueResponse(log_text)
 ```
 
 With this information, argument types, return types, summaries, descriptions, detailed default

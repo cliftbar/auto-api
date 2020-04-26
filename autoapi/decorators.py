@@ -1,3 +1,4 @@
+import inspect
 from typing import Callable, Dict, List
 
 from autoapi.autoapi import AutoAPI
@@ -16,11 +17,10 @@ def autodoc(parameter_schema: Dict = None,
     :param tags: Controls which section the documentation is shown in
     :return:
     """
-    if parameter_schema is None:
-        parameter_schema = {}
-
     def autodoc_wrapper(func: Callable) -> Callable:
         return_type = func.__annotations__.get("return")
+        if inspect.signature(func).return_annotation != inspect._empty:
+            return_type = inspect.signature(func).return_annotation
 
         autoapi_spec_parameters = {}
 
@@ -34,6 +34,10 @@ def autodoc(parameter_schema: Dict = None,
             autoapi_spec_parameters["tags"] = tags
 
         autoapi_spec_parameters["parameter_schema"] = parameter_schema
+
+        # TODO: use signature args as fallback for schema and default values,
+        #       and primary for return type, handle None return type
+        autoapi_spec_parameters["func_signature"] = inspect.signature(func)
 
         autoapi_spec_parameters["response_schemas"] = {
             "200": return_type

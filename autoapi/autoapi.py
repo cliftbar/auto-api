@@ -1,7 +1,9 @@
+import inspect
 import mimetypes
 
 from http.client import responses
-from typing import Dict, Union, List, Callable, Type
+from inspect import Signature
+from typing import Dict, Union, List, Callable, Type, Tuple
 from marshmallow import Schema
 from webargs import fields, dict2schema
 from werkzeug.local import LocalProxy
@@ -11,7 +13,7 @@ from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 
 from autoapi.responses import ResponseObjectInterface
-from autoapi.responses.responses import response_object_type_map
+from autoapi.responses.responses import response_object_type_map, type_field_mapping
 
 
 class AutoAPI:
@@ -56,29 +58,22 @@ class AutoAPI:
 
         return api_spec
 
-    def register_path(self,
-                      api_spec: APISpec,
-                      path_url: str,
-                      http_verb: str,
-                      response_code: int,
-                      summary: str = None,
-                      description: str = None,
-                      parameter_object: Union[Dict, Schema] = None,
-                      response_object: Union[Type, ResponseObjectInterface] = None,
-                      tags: List[Dict] = None) -> APISpec:
-        """
-        Register a new path to the provided APISpec object (passed in APISpec object is mutated).
-        :param api_spec: APISpec to register the path to
-        :param path_url: url of the path
-        :param http_verb:
-        :param response_code:
-        :param summary:
-        :param description:
-        :param parameter_object: HTTP Parameters of the path
-        :param response_object: HTTP response information
-        :param tags: Tags for categorizing the path.  Defaults to the AutoAPI App Title
-        :return: The same APISpec object passed in, but now with a new path register
-        """
+    def parse_parameter_schema(self,
+                               parameter_object: Union[Dict, Schema],
+                               func_signature: Signature,
+                               path_url: str,
+                               http_verb: str) -> Schema:
+        if parameter_object is None:
+            parameter_signature_dict = {}
+            for name, param in func_signature.parameters.items():
+                if name == "self":
+                    continue
+                default_val = None if param.default == inspect._empty else param.default
+
+                field = type_field_mapping[param.annotation](doc_default=default_val,
+                                                             required=param.default==inspect._empty)
+                parameter_signature_dict[name] = field
+            parameter_object = parameter_signature_dict
 
         if hasattr(parameter_object, "fields"):
             parameter_dict: Dict[str, fields.Field] = parameter_object.fields
@@ -101,7 +96,6 @@ class AutoAPI:
             url_name: str = "".join([part.title() for part in path_url.split("/")])
             schema_name: str = f"{url_name}{http_verb.title()}{loc.title()}Schema"
             location_schemas[loc] = Schema.from_dict(argmap, name=schema_name)
-            # location_schemas[loc] = autodict2schema(argmap, schema_name)
 
         class ParameterSchema(Schema):
             class Meta:
@@ -111,6 +105,12 @@ class AutoAPI:
                     in location_schemas.items()
                 }
 
+        return ParameterSchema()
+
+    def parse_response_schema(self,
+                              response_object: Union[Type, ResponseObjectInterface],
+                              path_url: str,
+                              http_verb: str) -> Tuple[Schema, str]:
         response_interface: ResponseObjectInterface
         if response_object in response_object_type_map.keys():
             response_interface = response_object_type_map[response_object]
@@ -119,7 +119,12 @@ class AutoAPI:
         else:
             response_interface = response_object
 
-        response_schema: Schema = response_interface.to_schema()
+        response_schema: Schema
+        if response_interface is not None:
+            response_schema = response_interface.to_schema()
+        else:
+            url_name: str = "".join([part.title() for part in path_url.split("/")])
+            response_schema = Schema.from_dict({}, name=f"{url_name}{http_verb.title()}ResponseSchema")
 
         content_type: str
         try:
@@ -127,7 +132,39 @@ class AutoAPI:
         except AttributeError as ae:
             content_type = mimetypes.MimeTypes().types_map[1][".txt"]
             # content_type = magic.from_buffer(str(response_object), mime=True)
-        parameter_schema = ParameterSchema()
+
+        return response_schema, content_type
+
+    def register_path(self,
+                      api_spec: APISpec,
+                      path_url: str,
+                      http_verb: str,
+                      response_code: int,
+                      summary: str = None,
+                      description: str = None,
+                      parameter_object: Union[Dict, Schema] = None,
+                      response_object: Union[Type, ResponseObjectInterface] = None,
+                      func_signature: Signature = None,
+                      tags: List[Dict] = None) -> APISpec:
+        """
+        Register a new path to the provided APISpec object (passed in APISpec object is mutated).
+        :param api_spec: APISpec to register the path to
+        :param path_url: url of the path
+        :param http_verb:
+        :param response_code:
+        :param summary:
+        :param description:
+        :param parameter_object: HTTP Parameters of the path
+        :param response_object: HTTP response information
+        :param func_signature: inspection Signature object of the API call function
+        :param tags: Tags for categorizing the path.  Defaults to the AutoAPI App Title
+        :return: The same APISpec object passed in, but now with a new path register
+        """
+
+        parameter_schema: Schema = self.parse_parameter_schema(parameter_object, func_signature, path_url, http_verb)
+
+        response_schema, content_type = self.parse_response_schema(response_object, path_url, http_verb)
+
         operations: Dict = {
             http_verb.lower(): {
                 "responses": {
@@ -175,6 +212,7 @@ class AutoAPI:
                     autoapi_spec_parameters: Dict = getattr(value_func, AutoAPI.function_key)
                     response_schemas: Dict = autoapi_spec_parameters.get("response_schemas")
                     parameter_schema: Dict = autoapi_spec_parameters.get("parameter_schema")
+                    func_signature: Signature = autoapi_spec_parameters.get("func_signature")
                     summary: str = autoapi_spec_parameters.get("summary")
                     description: str = autoapi_spec_parameters.get("description")
                     tags: List[Dict] = autoapi_spec_parameters.get("tags")
@@ -186,5 +224,6 @@ class AutoAPI:
                                        description,
                                        parameter_schema,
                                        response_schemas["200"],
+                                       func_signature,
                                        tags)
         return autoapi_spec

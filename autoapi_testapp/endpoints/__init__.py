@@ -1,2 +1,2 @@
-from .status import Status
+from .status import Status, MinimalStatus, IntrospectionStatus
 from .add_two import AddTwo

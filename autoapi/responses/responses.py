@@ -1,6 +1,7 @@
+import inspect
 import mimetypes
 from abc import ABC, abstractmethod
-from typing import Union, Dict, List
+from typing import Union, Dict, List, OrderedDict, Any, AnyStr, Text
 
 from marshmallow import Schema, fields
 
@@ -236,4 +237,27 @@ response_object_type_map: Dict = {
     dict: DictResponse,
     Dict: DictResponse,
     "Dict": DictResponse
+}
+
+# TODO: Make type to marshmallow type conversion
+type_field_mapping: Dict[Any, fields.Field] = {
+    bool: fields.Boolean,
+    "bool": fields.Boolean,
+    int: fields.Integer,
+    "int": fields.Integer,
+    float: fields.Float,
+    "float": fields.Float,
+    str: fields.String,
+    "str": fields.String,
+    Text: fields.String,
+    AnyStr: fields.String,
+    dict: fields.Dict,
+    "dict": fields.Dict,
+    OrderedDict: fields.Dict,
+    Dict: fields.Dict,
+    list: fields.List,
+    "list": fields.List,
+    List: fields.List,
+    Any: fields.Raw,
+    inspect._empty: fields.Raw
 }

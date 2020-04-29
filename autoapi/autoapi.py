@@ -68,10 +68,22 @@ class AutoAPI:
             for name, param in func_signature.parameters.items():
                 if name == "self":
                     continue
-                default_val = None if param.default == inspect._empty else param.default
+                # default_val = None if param.default == inspect._empty else param.default
 
-                field = type_field_mapping[param.annotation](doc_default=default_val,
-                                                             required=param.default==inspect._empty)
+                field_args: Dict = {
+                    "required": (param.default == inspect._empty)
+                }
+
+                if param.default != inspect._empty:
+                    field_args["doc_default"] = param.default
+
+                if param.default is None:
+                    field_args["allow_none"] = param.default
+
+                if type_field_mapping[param.annotation] in [fields.Raw, fields.Field]:
+                    field_args["description"] = "parameter of unspecified type"
+
+                field = type_field_mapping[param.annotation](**field_args)
                 parameter_signature_dict[name] = field
             parameter_object = parameter_signature_dict
 

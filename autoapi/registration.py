@@ -54,11 +54,13 @@ class AutoAPIApp:
         endpoint_prefix: str = "autoapi"
         url: str = f"/{endpoint_prefix}" if path_override is None else path_override
 
-        # if spec_routes is None or AutoAPISpecRoute.json in spec_routes:
-        #     app_api.add_resource(OpenAPISpecJSON, f"{url}/spec/json", endpoint=f"OpenAPISpecJSON_{endpoint_prefix}")
-        # if spec_routes is None or AutoAPISpecRoute.yaml in spec_routes:
-        #     app_api.add_resource(OpenAPISpecYAML, f"{url}/spec/yaml", endpoint=f"OpenAPISpecYAML_{endpoint_prefix}")
-        # if spec_routes is None or AutoAPISpecRoute.yml in spec_routes:
-        #     app_api.add_resource(OpenAPISpecYAML, f"{url}/spec/yml", endpoint=f"OpenAPISpecYML_{endpoint_prefix}")
+        if spec_routes is None or AutoAPISpecRoute.json in spec_routes:
+            app_api.add_resource(OpenAPISpecJSON, f"{url}/spec/json", endpoint=f"OpenAPISpecJSON_{endpoint_prefix}")
+        if spec_routes is None or AutoAPISpecRoute.yaml in spec_routes:
+            app_api.add_resource(OpenAPISpecYAML, f"{url}/spec/yaml", endpoint=f"OpenAPISpecYAML_{endpoint_prefix}")
+        if spec_routes is None or AutoAPISpecRoute.yml in spec_routes:
+            app_api.add_resource(OpenAPISpecYAML, f"{url}/spec/yml", endpoint=f"OpenAPISpecYML_{endpoint_prefix}")
         if spec_routes is None or AutoAPISpecRoute.html in spec_routes:
             app_api.add_resource(OpenAPIHTML, f"{url}/html", endpoint=f"OpenAPIHTML_{endpoint_prefix}")
+
+

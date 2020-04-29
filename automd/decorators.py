@@ -1,13 +1,13 @@
 import inspect
 from typing import Callable, Dict, List
 
-from autoapi.autoapi import AutoAPI
+from automd.automd import AutoMD
 
 
-def autodoc(parameter_schema: Dict = None,
-            summary: str = None,
-            description: str = None,
-            tags: List[Dict] = None) -> Callable:
+def automd(parameter_schema: Dict = None,
+           summary: str = None,
+           description: str = None,
+           tags: List[Dict] = None) -> Callable:
     """
     Decorator to perform documentation introspection on a FlaskRESTful Resource Class.
     Place before any FlaskRESTful argument parsers.
@@ -17,49 +17,49 @@ def autodoc(parameter_schema: Dict = None,
     :param tags: Controls which section the documentation is shown in
     :return:
     """
-    def autodoc_wrapper(func: Callable) -> Callable:
+    def automd_wrapper(func: Callable) -> Callable:
         return_type = func.__annotations__.get("return")
         if inspect.signature(func).return_annotation != inspect._empty:
             return_type = inspect.signature(func).return_annotation
 
-        autoapi_spec_parameters = {}
+        automd_spec_parameters = {}
 
         if summary is not None:
-            autoapi_spec_parameters["summary"] = summary
+            automd_spec_parameters["summary"] = summary
 
         if description is not None:
-            autoapi_spec_parameters["description"] = description
+            automd_spec_parameters["description"] = description
 
         if tags is not None:
-            autoapi_spec_parameters["tags"] = tags
+            automd_spec_parameters["tags"] = tags
 
-        autoapi_spec_parameters["parameter_schema"] = parameter_schema
+        automd_spec_parameters["parameter_schema"] = parameter_schema
 
         # TODO: use signature args as fallback for schema and default values,
         #       and primary for return type, handle None return type
-        autoapi_spec_parameters["func_signature"] = inspect.signature(func)
+        automd_spec_parameters["func_signature"] = inspect.signature(func)
 
-        autoapi_spec_parameters["response_schemas"] = {
+        automd_spec_parameters["response_schemas"] = {
             "200": return_type
         }
 
-        setattr(func, AutoAPI.function_key, autoapi_spec_parameters)
+        setattr(func, AutoMD.function_key, automd_spec_parameters)
 
         return func
-    return autodoc_wrapper
+    return automd_wrapper
 
 
 def override_webargs_flaskparser():
     import webargs.flaskparser as fp
 
-    def autoapi_use_args(argmap,
-                         req=None,
-                         *args,
-                         location=None,
-                         as_kwargs=False,
-                         validate=None,
-                         error_status_code=None,
-                         error_headers=None):
+    def automd_use_args(argmap,
+                        req=None,
+                        *args,
+                        location=None,
+                        as_kwargs=False,
+                        validate=None,
+                        error_status_code=None,
+                        error_headers=None):
         for arg in argmap.values():
             arg.metadata["location"] = location
 
@@ -70,9 +70,9 @@ def override_webargs_flaskparser():
                                   error_status_code=error_status_code,
                                   error_headers=error_headers)
 
-    def autoapi_use_kwargs(*args, **kwargs) -> Callable:
+    def automd_use_kwargs(*args, **kwargs) -> Callable:
         kwargs["as_kwargs"] = True
-        return autoapi_use_args(*args, **kwargs)
+        return automd_use_args(*args, **kwargs)
 
-    fp.use_args = autoapi_use_args
-    fp.use_kwargs = autoapi_use_kwargs
+    fp.use_args = automd_use_args
+    fp.use_kwargs = automd_use_kwargs

@@ -1,3 +1,0 @@
-from autoapi.decorators import override_webargs_flaskparser
-
-override_webargs_flaskparser()

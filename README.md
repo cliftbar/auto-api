@@ -1,5 +1,5 @@
-# AutoAPI
-AutoAPI is a documentation library for Flask APIs build with FlaskRESTful and Webargs.
+# AutoMD
+AutoMD is a documentation library for Flask APIs build with FlaskRESTful and Webargs.
 Endpoint parameters and basic responses are automatically parsed into the OpenAPI specification,
 using Type Hints and introspection, and a endpoints registered to serve the specification.
 
@@ -9,17 +9,17 @@ This library requires minimal changes to existing code, and most information (es
 doesn't rely on keeping disparate strings up to date.  
 
 ## Usage
-### AutoAPI registration/initialization
-The first step is to initialize the AutoAPI app from a FlaskRESTful Api.
+### AutoMD registration/initialization
+The first step is to initialize the AutoMD app from a FlaskRESTful Api.
 
 ```python
 app: Flask = Flask(__name__)
 api: Api = Api(app)
 
-spec: AutoAPIApp = AutoAPIApp(api, "AutoAPI Test App", "1.0.0", "3.0.0")
+spec: AutoMDApp = AutoMDApp(api, "AutoMD Test App", "1.0.0", "3.0.0")
 ``` 
 
-After that, all that is *required* is adding the `@autodoc` decorator to an existing Resource endpoint.
+After that, all that is *required* is adding the `@automd` decorator to an existing Resource endpoint.
 
 ```python
 class MinimalStatus(Resource):
@@ -27,7 +27,7 @@ class MinimalStatus(Resource):
         "text": fields.String(required=False)
     }
 
-    @autodoc()
+    @automd()
     @use_kwargs(get_query_arguments)
     def get(self, text):
         return text
@@ -42,9 +42,9 @@ class IntrospectionStatus(Resource):
         "text": fields.String(required=False)
     }
 
-    @autodoc()
+    @automd()
     @use_kwargs(post_query_arguments, location="json")
-    def post(self, text: str = "Hello AutoAPI") -> str:
+    def post(self, text: str = "Hello AutoMD") -> str:
         ret_text: str = "status check OK"
 
         if text is not None:
@@ -53,24 +53,24 @@ class IntrospectionStatus(Resource):
         return ret_text
 ```
 From this the APISpec also get the parameter type, default value, and API response type.  It does not get the parameter
-location yet though, that takes more aguements to autodoc.
+location yet though, that takes more aguements to automd.
 
-Filling in more information in the webargs fields, autodoc decorator, use_kwargs decorator, and using one of the
-AutoAPI response classes for type annotation and  gives even better information:
+Filling in more information in the webargs fields, automd decorator, use_kwargs decorator, and using one of the
+AutoMD response classes for type annotation and  gives even better information:
 ```python
 class Status(Resource):
     get_query_arguments = {
-        "text": fields.String(required=False, description='Text to return', doc_default="Hello AutoAPI")
+        "text": fields.String(required=False, description='Text to return', doc_default="Hello AutoMD")
     }
 
-    @autodoc(parameter_schema=get_query_arguments,
+    @automd(parameter_schema=get_query_arguments,
              summary="Status Endpoint",
              description="Status Endpoint, responds with a message made from the input string")
     @use_kwargs(get_query_arguments, location="query")
     def get(self, text: str = None) -> ValueResponse:
         log_text: str = "status check OK"
 
-        log_text = f"{log_text}: {text or 'Hello AutoAPI'}"
+        log_text = f"{log_text}: {text or 'Hello AutoMD'}"
 
         return ValueResponse(log_text)
 ```

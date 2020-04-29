@@ -8,7 +8,7 @@ from marshmallow import Schema, fields
 
 class ResponseObjectInterface(ABC):
     """
-    Abstract Response Class.  Extend to create custom response types that can be handled by AutoAPI
+    Abstract Response Class.  Extend to create custom response types that can be handled by AutoMD
     """
     @abstractmethod
     def to_dict(self) -> Dict:

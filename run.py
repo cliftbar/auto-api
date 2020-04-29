@@ -1,4 +1,4 @@
-from autoapi_testapp.app import app
+from automd_testapp.app import app
 
 
 # Label server as development

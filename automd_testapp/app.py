@@ -2,16 +2,16 @@ from flask import Flask
 from flask_restful import Api
 from webargs.flaskparser import parser, abort
 
-from autoapi.registration import AutoAPIApp
-from autoapi_testapp.endpoints import Status, AddTwo, MinimalStatus, IntrospectionStatus
+from automd.registration import AutoMDApp
+from automd_testapp.endpoints import Status, AddTwo, MinimalStatus, IntrospectionStatus
 
 # Initialize Flask App and API interface
-from autoapi_testapp.endpoints.add_two import MultiplyTwo
+from automd_testapp.endpoints.add_two import MultiplyTwo
 
 app: Flask = Flask(__name__)
 api: Api = Api(app)
 
-spec: AutoAPIApp = AutoAPIApp(api, "AutoAPI Test App", "1.0.0", "3.0.0")
+spec: AutoMDApp = AutoMDApp(api, "AutoMD Test App", "1.0.0", "3.0.0")
 
 # Disable 404 route suggestion from flask_restful
 # It would append url suggestions to the error message on 404s, which is undesired behavior

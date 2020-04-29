@@ -2,7 +2,7 @@ import flask
 from marshmallow import Schema
 
 
-class AutoAPIObjEncoder(flask.json.JSONEncoder):
+class AutoMDObjEncoder(flask.json.JSONEncoder):
     """
     Extension of flask.json.JSONEncoder to allow custom "to_dict" methods
     """

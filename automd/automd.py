@@ -5,20 +5,20 @@ from http.client import responses
 from inspect import Signature
 from typing import Dict, Union, List, Callable, Type, Tuple
 from marshmallow import Schema
-from webargs import fields, dict2schema
+from webargs import fields
 from werkzeug.local import LocalProxy
 from flask import url_for, Flask
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 
-from autoapi.responses import ResponseObjectInterface
-from autoapi.responses.responses import response_object_type_map, type_field_mapping
+from automd.responses import ResponseObjectInterface
+from automd.responses.responses import response_object_type_map, type_field_mapping
 
 
-class AutoAPI:
-    config_key: str = "AutoAPI"
-    function_key = "autoapi_spec"
+class AutoMD:
+    config_key: str = "AutoMD"
+    function_key = "automd_spec"
 
     def __init__(self,
                  title: str,
@@ -169,7 +169,7 @@ class AutoAPI:
         :param parameter_object: HTTP Parameters of the path
         :param response_object: HTTP response information
         :param func_signature: inspection Signature object of the API call function
-        :param tags: Tags for categorizing the path.  Defaults to the AutoAPI App Title
+        :param tags: Tags for categorizing the path.  Defaults to the AutoMD App Title
         :return: The same APISpec object passed in, but now with a new path register
         """
 
@@ -205,11 +205,11 @@ class AutoAPI:
 
     def application_to_apispec(self, app: Union[Flask, LocalProxy]) -> APISpec:
         """
-        Create a new APISpec of the provided application that has been initialized with AutoAPI
-        :param app: Flask app initialized with AutoAPI
+        Create a new APISpec of the provided application that has been initialized with AutoMD
+        :param app: Flask app initialized with AutoMD
         :return:
         """
-        autoapi_spec: APISpec = self.start_spec()
+        automd_spec: APISpec = self.start_spec()
 
         name: str
         for name, view in app.view_functions.items():
@@ -220,15 +220,15 @@ class AutoAPI:
                 key: str = url_for(view.view_class.endpoint)
                 value_func: Callable = getattr(view.view_class, method.lower())
 
-                if hasattr(value_func, AutoAPI.function_key):
-                    autoapi_spec_parameters: Dict = getattr(value_func, AutoAPI.function_key)
-                    response_schemas: Dict = autoapi_spec_parameters.get("response_schemas")
-                    parameter_schema: Dict = autoapi_spec_parameters.get("parameter_schema")
-                    func_signature: Signature = autoapi_spec_parameters.get("func_signature")
-                    summary: str = autoapi_spec_parameters.get("summary")
-                    description: str = autoapi_spec_parameters.get("description")
-                    tags: List[Dict] = autoapi_spec_parameters.get("tags")
-                    self.register_path(autoapi_spec,
+                if hasattr(value_func, AutoMD.function_key):
+                    automd_spec_parameters: Dict = getattr(value_func, AutoMD.function_key)
+                    response_schemas: Dict = automd_spec_parameters.get("response_schemas")
+                    parameter_schema: Dict = automd_spec_parameters.get("parameter_schema")
+                    func_signature: Signature = automd_spec_parameters.get("func_signature")
+                    summary: str = automd_spec_parameters.get("summary")
+                    description: str = automd_spec_parameters.get("description")
+                    tags: List[Dict] = automd_spec_parameters.get("tags")
+                    self.register_path(automd_spec,
                                        key,
                                        method,
                                        200,
@@ -238,4 +238,4 @@ class AutoAPI:
                                        response_schemas["200"],
                                        func_signature,
                                        tags)
-        return autoapi_spec
+        return automd_spec

@@ -143,7 +143,6 @@ class AutoMD:
             content_type = response_interface.content_type()
         except AttributeError as ae:
             content_type = mimetypes.MimeTypes().types_map[1][".txt"]
-            # content_type = magic.from_buffer(str(response_object), mime=True)
 
         return response_schema, content_type
 

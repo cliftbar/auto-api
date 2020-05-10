@@ -9,32 +9,46 @@ This library requires minimal changes to existing code, and most information (es
 doesn't rely on keeping docstrings up to date.
 
 ## Installation
-AutoMD is available through PyPi.  Install using pip:
+AutoMD is available through PyPi.  AutoMD requires Python >= 3.6 (f-strings are too convenient to ignore)
+Install using pip:
 ```
 pip install automd
 ```
 
-AutoMD also install the following dependancies:
-- Flask
-- FlaskRESTful
-- Webargs
-- ApiSpec
-- PyYAML
+AutoMD also install the following dependencies:
+- flask
+- flask-restful
+- webargs
+- apispec
+- pyyaml
+- marshmallow
+- werkzeug
 
 ## Usage
 ### AutoMD registration/initialization
 The first step is to initialize the AutoMD app from a FlaskRESTful Api.
 
 ```python
+from flask import Flask
+from flask_restful import Api
+from automd.registration import AutoMDApp
+
+
 app: Flask = Flask(__name__)
 api: Api = Api(app)
 
-spec: AutoMDApp = AutoMDApp(api, "AutoMD Test App", "1.0.0", "3.0.0")
+spec: AutoMDApp = AutoMDApp(api, title="AutoMD Test App", app_version="1.0.0", openapi_version="3.0.0")
 ``` 
 
 After that, all that is *required* is adding the `@automd` decorator to an existing Resource endpoint.
 
 ```python
+from flask_restful import Resource
+from marshmallow import fields
+from webargs.flaskparser import use_kwargs
+from automd.decorators import automd
+
+
 class MinimalStatus(Resource):
     get_query_arguments = {
         "text": fields.String(required=False)
@@ -50,6 +64,12 @@ will be pretty limited, but will still have the API url, argument, and a default
 
 With more complete python annotations, more information can be gleaned:
 ```python
+from flask_restful import Resource
+from marshmallow import fields
+from webargs.flaskparser import use_kwargs
+from automd.decorators import automd
+
+
 class IntrospectionStatus(Resource):
     post_query_arguments = {
         "text": fields.String(required=False)
@@ -71,6 +91,12 @@ location yet though, that takes more aguements to automd.
 Filling in more information in the webargs fields, automd decorator, use_kwargs decorator, and using one of the
 AutoMD response classes for type annotation and  gives even better information:
 ```python
+from flask_restful import Resource
+from marshmallow import fields
+from webargs.flaskparser import use_kwargs
+from automd.decorators import automd
+from automd.responses import ValueResponse
+
 class Status(Resource):
     get_query_arguments = {
         "text": fields.String(required=False, description='Text to return', doc_default="Hello AutoMD")

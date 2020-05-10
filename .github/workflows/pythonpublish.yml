@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Set Release Env
-        run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
+      run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF:10}
     - name: Set up Python
       uses: actions/setup-python@v1
       with:

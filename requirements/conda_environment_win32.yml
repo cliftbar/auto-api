@@ -1,4 +1,4 @@
-name: AutoMD
+name: automd
 channels:
   - pvlib
   - defaults
@@ -10,7 +10,6 @@ dependencies:
   - certifi=2020.4.5.1=py38_0
   - click=7.1.1=py_0
   - flask=1.1.2=py_0
-  - flask-cors=3.0.8=py_0
   - flask-restful=0.3.8=py_0
   - itsdangerous=1.1.0=py_0
   - jinja2=2.11.1=py_0
@@ -33,4 +32,4 @@ dependencies:
   - wincertstore=0.2=py38_0
   - yaml=0.1.7=hc54c509_2
   - zlib=1.2.11=h62dcd97_4
-prefix: C:\Users\cwbarclift\Anaconda3\envs\AutoMD
+prefix: C:\Users\cwbarclift\miniconda3\envs\automd

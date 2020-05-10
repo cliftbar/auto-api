@@ -83,7 +83,7 @@ def generate_template_from_yaml(spec_yaml: str) -> str:
 def generate_template_from_dict(spec_dict: Dict) -> str:
     """
         Creates the OpenAPI HTML page from a JSON input
-        :param spec_yaml:
+        :param spec_dict:
         :return:
         """
     return OPENAPI_TEMPLATE % json.dumps(spec_dict)

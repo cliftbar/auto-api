@@ -1,5 +1,4 @@
 import flask
-from marshmallow import Schema
 
 
 class AutoMDObjEncoder(flask.json.JSONEncoder):

@@ -25,7 +25,9 @@ setup(
         "flask-restful",
         "webargs",
         "apispec",
-        "pyyaml"
+        "pyyaml",
+        "marshmallow",
+        "werkzeug"
     ],
     classifiers=[
         "Environment :: Web Environment",

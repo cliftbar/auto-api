@@ -1,4 +1,4 @@
-import inspect
+from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
 from typing import Union, Dict, List, OrderedDict, Any, AnyStr, Text
@@ -138,7 +138,7 @@ class JSONResponse(ResponseObjectInterface):
         }
 
     @staticmethod
-    def to_schema() -> Dict:
+    def to_schema() -> Schema:
         return JSONResponse.JSONResponseSchema()
 
     @staticmethod
@@ -239,7 +239,6 @@ response_object_type_map: Dict = {
     "Dict": DictResponse
 }
 
-# TODO: Make type to marshmallow type conversion
 type_field_mapping: Dict[Any, fields.Field] = {
     bool: fields.Boolean,
     "bool": fields.Boolean,
@@ -259,5 +258,5 @@ type_field_mapping: Dict[Any, fields.Field] = {
     "list": fields.List,
     List: fields.List,
     Any: fields.Raw,
-    inspect._empty: fields.Raw
+    Signature.empty: fields.Raw
 }

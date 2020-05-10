@@ -11,11 +11,11 @@ class AddTwo(Resource):
         "second_number": fields.Float(required=True, description="Second Number to Add")
     }
 
+    @use_kwargs(get_arguments, location="query")
     @automd(parameter_schema=get_arguments,
             summary='Add Endpoint',
             description='Returns the sum of two numbers.  Takes arguments in Query Parameters',
             tags=[{"name": "Math"}])
-    @use_kwargs(get_arguments, location="query")
     def get(self, first_number: float, second_number: float) -> float:
         return first_number + second_number
 

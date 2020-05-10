@@ -1,5 +1,5 @@
-import inspect
 import mimetypes
+
 
 from http.client import responses
 from inspect import Signature
@@ -11,21 +11,24 @@ from flask import url_for, Flask
 
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
+from werkzeug.routing import Rule, BuildError
 
+from automd.decorators import automd
+from automd.http_verbs import HTTPVerb
+from automd.keys import AutoMDKeys
 from automd.responses import ResponseObjectInterface
 from automd.responses.responses import response_object_type_map, type_field_mapping
 
 
 class AutoMD:
-    config_key: str = "AutoMD"
-    function_key = "automd_spec"
-
     def __init__(self,
                  title: str,
                  app_version: str = "1.0.0",
                  openapi_version: str = "3.0.0",
                  info: Dict = None,
-                 default_tag: str = None):
+                 default_tag: str = None,
+                 always_document: bool = False,
+                 documented_verbs: Tuple[HTTPVerb] = (HTTPVerb.get, HTTPVerb.post, HTTPVerb.put, HTTPVerb.delete)):
         """
 
         :param title: Application title
@@ -34,8 +37,12 @@ class AutoMD:
         :param info: Detailed information about the application.
         :param default_tag: Tag to apply to endpoints if not specified in their decorator.
                Falls back to application title.
+        :param always_document: Apply basic documentation to all endpoints, even if undecorated.
+        :param documented_verbs: Tuple of what HTTP Verbs to document.  Defaults to GET, POST, PUT, DELETE, PATCH
         """
+        self.always_document: bool = always_document
         self.default_tag: Dict = {"name": default_tag or title}
+        self.documented_verbs: Tuple[HTTPVerb] = documented_verbs
 
         self.apispec_options: Dict = {
             "title": title,
@@ -58,8 +65,8 @@ class AutoMD:
 
         return api_spec
 
-    def parse_parameter_schema(self,
-                               parameter_object: Union[Dict, Schema],
+    @staticmethod
+    def parse_parameter_schema(parameter_object: Union[Dict, Schema],
                                func_signature: Signature,
                                path_url: str,
                                http_verb: str) -> Schema:
@@ -71,10 +78,10 @@ class AutoMD:
                 # default_val = None if param.default == inspect._empty else param.default
 
                 field_args: Dict = {
-                    "required": (param.default == inspect._empty)
+                    "required": (param.default == Signature.empty)
                 }
 
-                if param.default != inspect._empty:
+                if param.default != Signature.empty:
                     field_args["doc_default"] = param.default
 
                 if param.default is None:
@@ -83,6 +90,7 @@ class AutoMD:
                 if type_field_mapping[param.annotation] in [fields.Raw, fields.Field]:
                     field_args["description"] = "parameter of unspecified type"
 
+                # noinspection PyCallingNonCallable
                 field = type_field_mapping[param.annotation](**field_args)
                 parameter_signature_dict[name] = field
             parameter_object = parameter_signature_dict
@@ -100,7 +108,7 @@ class AutoMD:
 
             location_argmaps[location][name] = field
 
-        location_schemas: Dict[str, Dict[str, Schema]] = {}
+        location_schemas: Dict[str, Union[Dict[str, Schema], type]] = {}
         for loc, argmap in location_argmaps.items():
             if loc not in location_schemas:
                 location_schemas[loc] = {}
@@ -119,8 +127,8 @@ class AutoMD:
 
         return ParameterSchema()
 
-    def parse_response_schema(self,
-                              response_object: Union[Type, ResponseObjectInterface],
+    @staticmethod
+    def parse_response_schema(response_object: Union[Type, ResponseObjectInterface],
                               path_url: str,
                               http_verb: str) -> Tuple[Schema, str]:
         response_interface: ResponseObjectInterface
@@ -131,7 +139,7 @@ class AutoMD:
         else:
             response_interface = response_object
 
-        response_schema: Schema
+        response_schema: Union[Schema, type]
         if response_interface is not None:
             response_schema = response_interface.to_schema()
         else:
@@ -141,7 +149,7 @@ class AutoMD:
         content_type: str
         try:
             content_type = response_interface.content_type()
-        except AttributeError as ae:
+        except AttributeError:
             content_type = mimetypes.MimeTypes().types_map[1][".txt"]
 
         return response_schema, content_type
@@ -212,15 +220,37 @@ class AutoMD:
 
         name: str
         for name, view in app.view_functions.items():
-            if not hasattr(view, "methods"):
+            if hasattr(view, "methods"):
+                self.parse_flask_restful(automd_spec, view)
+            elif hasattr(view, AutoMDKeys.function.value) or self.always_document:
+                self.parse_flask_route(app, automd_spec, name, view)
+            else:
                 continue
-            method: str
-            for method in view.methods:
-                key: str = url_for(view.view_class.endpoint)
-                value_func: Callable = getattr(view.view_class, method.lower())
 
-                if hasattr(value_func, AutoMD.function_key):
-                    automd_spec_parameters: Dict = getattr(value_func, AutoMD.function_key)
+        return automd_spec
+
+    def parse_flask_route(self, app: Union[Flask, LocalProxy], automd_spec: APISpec, name: str, view):
+        route_rules: List[Rule] = list(app.url_map.iter_rules(name))
+
+        rule: Rule
+        for rule in route_rules:
+            method: str
+            for method in rule.methods:
+                if HTTPVerb[method.lower()] not in self.documented_verbs:
+                    continue
+                try:
+                    key: str = url_for(rule.endpoint)
+                except BuildError:
+                    continue
+                value_func: Callable = view
+
+                if (self.always_document
+                        and not hasattr(value_func, AutoMDKeys.function.value)
+                        and not hasattr(value_func, AutoMDKeys.hide_function.value)):
+                    value_func = automd()(value_func)
+
+                if hasattr(value_func, AutoMDKeys.function.value):
+                    automd_spec_parameters: Dict = getattr(value_func, AutoMDKeys.function.value)
                     response_schemas: Dict = automd_spec_parameters.get("response_schemas")
                     parameter_schema: Dict = automd_spec_parameters.get("parameter_schema")
                     func_signature: Signature = automd_spec_parameters.get("func_signature")
@@ -237,4 +267,36 @@ class AutoMD:
                                        response_schemas["200"],
                                        func_signature,
                                        tags)
-        return automd_spec
+
+    def parse_flask_restful(self, automd_spec: APISpec, view):
+        method: str
+        for method in view.methods:
+            if HTTPVerb[method.lower()] not in self.documented_verbs:
+                continue
+            key: str = url_for(view.view_class.endpoint)
+
+            value_func: Callable = getattr(view.view_class, method.lower())
+
+            if (self.always_document
+                    and not hasattr(value_func, AutoMDKeys.function.value)
+                    and not hasattr(value_func, AutoMDKeys.hide_function.value)):
+                value_func = automd()(value_func)
+
+            if hasattr(value_func, AutoMDKeys.function.value):
+                automd_spec_parameters: Dict = getattr(value_func, AutoMDKeys.function.value)
+                response_schemas: Dict = automd_spec_parameters.get("response_schemas")
+                parameter_schema: Dict = automd_spec_parameters.get("parameter_schema")
+                func_signature: Signature = automd_spec_parameters.get("func_signature")
+                summary: str = automd_spec_parameters.get("summary")
+                description: str = automd_spec_parameters.get("description")
+                tags: List[Dict] = automd_spec_parameters.get("tags")
+                self.register_path(automd_spec,
+                                   key,
+                                   method,
+                                   200,
+                                   summary,
+                                   description,
+                                   parameter_schema,
+                                   response_schemas["200"],
+                                   func_signature,
+                                   tags)

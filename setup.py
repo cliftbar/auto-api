@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 from pathlib import Path
 
 long_description: str = Path(Path.cwd(), "README.md").read_text()
-version: str = os.environ.get("GITHUB_REF")
+version: str = os.environ.get("RELEASE_VERSION")
 
 setup(
     name="AutoMD",

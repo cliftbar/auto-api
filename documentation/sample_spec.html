@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Swagger UI</title>
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Source+Code+Pro:300,600|Titillium+Web:400,600,700" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.24.2/swagger-ui.css" >
+  <style>
+    html
+    {
+      box-sizing: border-box;
+      overflow: -moz-scrollbars-vertical;
+      overflow-y: scroll;
+    }
+    *,
+    *:before,
+    *:after
+    {
+      box-sizing: inherit;
+    }
+    body {
+      margin:0;
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.24.2/swagger-ui-bundle.js"> </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/3.24.2/swagger-ui-standalone-preset.js"> </script>
+<script>
+window.onload = function() {
+  var spec = {"info": {"title": "AutoMD Test App", "version": "1.0.0"}, "paths": {"/automd/spec/json": {"get": {"responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/DictResponse"}}}}}, "parameters": [], "summary": "OpenAPI JSON Documentation Endpoint", "description": "Returns the OpenAPI Spec in JSON format", "tags": [{"name": "AutoMD"}]}}, "/automd/spec/yml": {"get": {"responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"$ref": "#/components/schemas/StringResponse"}}}}}, "parameters": [], "summary": "OpenAPI Yaml Documentation Endpoint", "description": "Returns the OpenAPI Spec in Yaml format", "tags": [{"name": "AutoMD"}]}}, "/automd/html": {"get": {"responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"$ref": "#/components/schemas/StringResponse"}}}}}, "parameters": [], "summary": "OpenAPI HTML Documentation Endpoint", "description": "Returns the OpenAPI HTML", "tags": [{"name": "AutoMD"}]}}, "/status/status": {"get": {"responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ValueResponse"}}}}}, "parameters": [{"in": "query", "name": "query", "required": false, "schema": {"$ref": "#/components/schemas/StatusStatusGetQuery"}}], "summary": "Status Endpoint", "description": "Status Endpoint, responds with a message made from the input string", "tags": [{"name": "AutoMD Test App"}]}, "post": {"responses": {"200": {"description": "OK", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/JSONResponse"}}}}}, "parameters": [{"in": "query", "name": "query", "required": false, "schema": {"$ref": "#/components/schemas/StatusStatusPostQuery"}}, {"in": "body", "name": "body", "required": false, "schema": {"type": "object", "properties": {"json": {"$ref": "#/components/schemas/StatusStatusPostJson"}}}}], "summary": "Status Posting", "description": "Status Endpoint using post, responds with a message.  Json text overrides query text.", "tags": [{"name": "AutoMD Test App"}]}}, "/status/status/minimal": {"get": {"responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"$ref": "#/components/schemas/StatusStatusMinimalGetResponse"}}}}}, "parameters": [{"in": "query", "name": "query", "required": false, "schema": {"$ref": "#/components/schemas/StatusStatusMinimalGetQuery"}}], "summary": null, "description": null, "tags": [{"name": "AutoMD Test App"}]}}, "/status/status/introspection": {"post": {"responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"$ref": "#/components/schemas/StringResponse"}}}}}, "parameters": [{"in": "query", "name": "query", "required": false, "schema": {"$ref": "#/components/schemas/StatusStatusIntrospectionPostQuery"}}], "summary": null, "description": null, "tags": [{"name": "AutoMD Test App"}]}}, "/math/add": {"get": {"responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"$ref": "#/components/schemas/IntegerResponse"}}}}}, "parameters": [{"in": "query", "name": "query", "required": false, "schema": {"$ref": "#/components/schemas/MathAddGetQuery"}}], "summary": "Add Endpoint", "description": "Returns the sum of two numbers.  Takes arguments in Query Parameters", "tags": [{"name": "Math"}]}}, "/math/multiply": {"get": {"responses": {"200": {"description": "OK", "content": {"text/plain": {"schema": {"$ref": "#/components/schemas/IntegerResponse"}}}}}, "parameters": [{"in": "body", "name": "body", "required": false, "schema": {"type": "object", "properties": {"json": {"$ref": "#/components/schemas/MathMultiplyGetJson"}}}}], "summary": "Multiply Endpoint", "description": "Multiplies two numbers and returns the result.  Takes arguments in JSON", "tags": [{"name": "Math"}]}}}, "openapi": "3.0.0", "components": {"schemas": {"DictResponse": {"type": "object", "properties": {"response": {"type": "object", "description": "Object response field"}}, "required": ["response"]}, "StringResponse": {"type": "object", "properties": {"value": {"type": "string", "description": "String response field"}}, "required": ["value"]}, "StatusStatusGetQuery": {"type": "object", "properties": {"text": {"type": "string", "default": "Hello AutoMD", "description": "Text to return"}}}, "ValueResponse": {"type": "object", "properties": {"value": {"description": "General value field, can hold an Integer, Float, String, Boolean, Dictionary, or List"}}, "required": ["value"]}, "StatusStatusPostQuery": {"type": "object", "properties": {"text": {"type": "string", "default": "Hello AutoMD", "description": "Text to return"}}}, "StatusStatusPostJson": {"type": "object", "properties": {"json_text": {"type": "string", "default": "Hello AutoMD", "description": "Text to return (overrides query parameters)"}}}, "JSONResponse": {"type": "object", "properties": {"value": {"description": "JSON response field"}}, "required": ["value"]}, "StatusStatusMinimalGetQuery": {"type": "object", "properties": {"text": {"description": "parameter of unspecified type"}}, "required": ["text"]}, "StatusStatusMinimalGetResponse": {"type": "object", "properties": {}}, "StatusStatusIntrospectionPostQuery": {"type": "object", "properties": {"text": {"type": "string", "default": "Hello AutoMD"}}}, "MathAddGetQuery": {"type": "object", "properties": {"second_number": {"type": "number", "format": "float", "description": "Second Number to Add"}, "first_number": {"type": "number", "format": "float", "description": "First Number to Add"}}, "required": ["first_number", "second_number"]}, "IntegerResponse": {"type": "object", "properties": {"value": {"type": "integer", "format": "int32", "description": "Integer response field"}}, "required": ["value"]}, "MathMultiplyGetJson": {"type": "object", "properties": {"second_number": {"type": "number", "format": "float", "description": "Second Number to Multiply"}, "first_number": {"type": "number", "format": "float", "description": "First Number to Multiply"}}, "required": ["first_number", "second_number"]}}}};
+  // Build a system
+  const ui = SwaggerUIBundle({
+    spec: spec,
+    dom_id: '#swagger-ui',
+    deepLinking: true,
+    presets: [
+      SwaggerUIBundle.presets.apis,
+      //SwaggerUIStandalonePreset
+    ],
+    plugins: [
+      SwaggerUIBundle.plugins.DownloadUrl
+    ],
+    //layout: "StandaloneLayout"
+  })
+  window.ui = ui
+}
+</script>
+</body>
+</html>

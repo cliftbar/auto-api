@@ -6,7 +6,19 @@ using Type Hints and introspection, and a endpoints registered to serve the spec
 ## Motivation
 Documentation libraries tend to rely heavily on elaborate docstrings and static generation from source code.
 This library requires minimal changes to existing code, and most information (especially parameter specs)
-doesn't rely on keeping disparate strings up to date.  
+doesn't rely on keeping docstrings up to date.
+
+## Installation
+AutoMD is available through PyPi.  Install using pip:
+```
+pip install automd
+```
+
+AutoMD also install the following dependancies:
+- Flask
+- FlaskRESTful
+- Webargs
+- ApiSpec
 
 ## Usage
 ### AutoMD registration/initialization

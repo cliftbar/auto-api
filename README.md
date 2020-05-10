@@ -19,6 +19,7 @@ AutoMD also install the following dependancies:
 - FlaskRESTful
 - Webargs
 - ApiSpec
+- PyYAML
 
 ## Usage
 ### AutoMD registration/initialization

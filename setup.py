@@ -1,12 +1,14 @@
+import os
+
 from setuptools import setup, find_packages
 from pathlib import Path
 
 long_description: str = Path(Path.cwd(), "README.md").read_text()
-
+version: str = os.environ.get("GITHUB_REF")
 
 setup(
     name="AutoMD",
-    version="1.0.1.2",
+    version=version,
     url="https://github.com/cliftbar/automd",
     license="MIT",
     author="Cameron Barclift",
@@ -15,9 +17,6 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     packages=find_packages(include="automd"),
-    # if you would be using a package instead use packages instead
-    # of py_modules:
-    # packages=['flask_sqlite3'],
     zip_safe=False,
     include_package_data=True,
     platforms="any",

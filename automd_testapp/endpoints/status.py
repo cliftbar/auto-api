@@ -2,7 +2,7 @@ from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import use_kwargs
 
-from automd.decorators import automd
+from automd.decorators import automd, disable_automd
 from automd.responses import ValueResponse, JSONResponse
 
 
@@ -55,6 +55,23 @@ class MinimalStatus(Resource):
     @use_kwargs(get_query_arguments)
     def get(self, text):
         return text
+
+    post_query_arguments = {
+        "text": fields.String(required=False)
+    }
+
+    @use_kwargs(post_query_arguments)
+    def post(self, text):
+        return text
+
+    put_query_arguments = {
+        "text": fields.String(required=False)
+    }
+
+    @disable_automd()
+    @use_kwargs(put_query_arguments)
+    def put(self, text):
+        return "Secret OK: " + text
 
 
 class IntrospectionStatus(Resource):

@@ -1,7 +1,8 @@
 import inspect
+from inspect import Signature
 from typing import Callable, Dict, List
 
-from automd.automd import AutoMD
+from automd.keys import AutoMDKeys
 
 
 def automd(parameter_schema: Dict = None,
@@ -10,7 +11,6 @@ def automd(parameter_schema: Dict = None,
            tags: List[Dict] = None) -> Callable:
     """
     Decorator to perform documentation introspection on a FlaskRESTful Resource Class.
-    Place before any FlaskRESTful argument parsers.
     :param parameter_schema: same as get passed into use_kwargs
     :param summary: Quick overview of the endpoint
     :param description: Detailed information about the endpoint
@@ -18,8 +18,8 @@ def automd(parameter_schema: Dict = None,
     :return:
     """
     def automd_wrapper(func: Callable) -> Callable:
-        return_type = func.__annotations__.get("return")
-        if inspect.signature(func).return_annotation != inspect._empty:
+        return_type = getattr(func, "__annotations__", {}).get("return")
+        if inspect.signature(func).return_annotation != Signature.empty:
             return_type = inspect.signature(func).return_annotation
 
         automd_spec_parameters = {}
@@ -43,7 +43,19 @@ def automd(parameter_schema: Dict = None,
             "200": return_type
         }
 
-        setattr(func, AutoMD.function_key, automd_spec_parameters)
+        setattr(func, AutoMDKeys.function.value, automd_spec_parameters)
+
+        return func
+    return automd_wrapper
+
+
+def disable_automd() -> Callable:
+    """
+    Explicitly disables AutoMD from inspecting the route, overriding "Always Document" settings.
+    :return:
+    """
+    def automd_wrapper(func: Callable) -> Callable:
+        setattr(func, AutoMDKeys.hide_function.value, True)
 
         return func
     return automd_wrapper

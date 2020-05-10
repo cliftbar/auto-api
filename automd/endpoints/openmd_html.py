@@ -6,6 +6,7 @@ from flask_restful import Resource
 
 from automd.decorators import automd
 from automd.automd import AutoMD
+from automd.keys import AutoMDKeys
 from automd.templates.openapi import generate_template_from_dict
 
 
@@ -14,7 +15,7 @@ class OpenMDHTML(Resource):
             description='Returns the OpenAPI HTML',
             tags=[{"name": "AutoMD"}])
     def get(self) -> str:
-        auto_app: AutoMD = current_app.config[AutoMD.config_key].auto_md
+        auto_app: AutoMD = current_app.config[AutoMDKeys.config.value].auto_md
 
         automd_spec: APISpec = auto_app.application_to_apispec(current_app)
 

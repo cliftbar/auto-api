@@ -1,12 +1,14 @@
+import os
+
 from setuptools import setup, find_packages
 from pathlib import Path
 
 long_description: str = Path(Path.cwd(), "README.md").read_text()
-
+version: str = os.environ.get("GITHUB_REF")
 
 setup(
     name="AutoMD",
-    version="1.0.1.2",
+    version=version,
     url="https://github.com/cliftbar/automd",
     license="MIT",
     author="Cameron Barclift",

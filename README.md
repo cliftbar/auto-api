@@ -94,4 +94,4 @@ are the only "magic strings" needed, and those will generally not change much or
 keep up to date compared to the automatically grabbed information.
 
 An example Flask API app is provided to showcase some functionality.  Start it using `run.py`.
-A sample of the OpenAPI spec generated is [here](documentation/sample_spec.html)
+A sample of the OpenAPI spec generated is [here](https://cliftbar.github.io/automd/documentation/sample_spec.html).

@@ -1,7 +1,7 @@
 from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
-from typing import Union, Dict, List, OrderedDict, Any, AnyStr, Text
+from typing import Union, Dict, List, Any, AnyStr, Text
 
 from marshmallow import Schema, fields
 
@@ -94,6 +94,7 @@ class ListResponse(ResponseObjectInterface):
 
 class DictResponse(ResponseObjectInterface):
     class DictResponseSchema(Schema):
+        # TODO make this value, or make all the other response, and reconcile with to_dict
         response = fields.Dict(required=True, description="Object response field")
 
     def __init__(self, value: Dict):
@@ -120,6 +121,7 @@ class DictResponse(ResponseObjectInterface):
 
 class JSONResponse(ResponseObjectInterface):
     class JSONResponseSchema(Schema):
+        # TODO introduce Polymorphic Field
         value = fields.Field(required=True,
                              validate=(lambda x: type(x) in [dict, list]),
                              description="JSON response field")
@@ -252,7 +254,6 @@ type_field_mapping: Dict[Any, fields.Field] = {
     AnyStr: fields.String,
     dict: fields.Dict,
     "dict": fields.Dict,
-    OrderedDict: fields.Dict,
     Dict: fields.Dict,
     list: fields.List,
     "list": fields.List,

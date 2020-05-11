@@ -75,7 +75,6 @@ class AutoMD:
             for name, param in func_signature.parameters.items():
                 if name == "self":
                     continue
-                # default_val = None if param.default == inspect._empty else param.default
 
                 field_args: Dict = {
                     "required": (param.default == Signature.empty)
@@ -127,10 +126,18 @@ class AutoMD:
 
         return ParameterSchema()
 
+    # TODO: nicer return than tuple
     @staticmethod
     def parse_response_schema(response_object: Union[Type, ResponseObjectInterface],
                               path_url: str,
                               http_verb: str) -> Tuple[Schema, str]:
+        """
+
+        :param response_object:
+        :param path_url:
+        :param http_verb:
+        :return: Response Schema, content-type
+        """
         response_interface: ResponseObjectInterface
         if response_object in response_object_type_map.keys():
             response_interface = response_object_type_map[response_object]

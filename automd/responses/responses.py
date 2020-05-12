@@ -265,7 +265,7 @@ def map_response_object_type(key: Any,
     return ret_interface or default
 
 
-type_field_mapping: Dict[Any, fields.Field] = {
+type_field_mapping: Dict[Any, Type[fields.Field]] = {
     bool: fields.Boolean,
     "bool": fields.Boolean,
     int: fields.Integer,
@@ -278,10 +278,30 @@ type_field_mapping: Dict[Any, fields.Field] = {
     AnyStr: fields.String,
     dict: fields.Dict,
     "dict": fields.Dict,
+    "Dict": fields.Dict,
     Dict: fields.Dict,
+    getattr(Dict, "_name", "Dict._name"): fields.Dict,
+    getattr(Dict, "_gorg", "Dict._gorg"): fields.Dict,
     list: fields.List,
     "list": fields.List,
+    "List": fields.List,
     List: fields.List,
+    getattr(List, "_name", "List._name"): fields.List,
+    getattr(List, "_gorg", "List._gorg"): fields.List,
     Any: fields.Raw,
-    Signature.empty: fields.Raw
+    "Any": fields.Raw,
+    getattr(Any, "_name", "Any._name"): fields.Raw,
+    getattr(Any, "_gorg", "Any._gorg"): fields.Raw,
+    Signature.empty: fields.Raw,
 }
+
+
+def map_type_field_mapping(key: Any,
+                           default: fields.Field = None) -> Type[fields.Field]:
+    ret_field: Type[fields.Field] = type_field_mapping.get(key)
+
+    if ret_field is None:
+        name: str = getattr(key, "_name", getattr(key, "_gorg", None))
+        ret_field = type_field_mapping.get(name)
+
+    return ret_field or default

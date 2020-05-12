@@ -17,7 +17,7 @@ from automd.decorators import automd
 from automd.http_verbs import HTTPVerb
 from automd.keys import AutoMDKeys
 from automd.responses import ResponseObjectInterface
-from automd.responses.responses import response_object_type_map, type_field_mapping
+from automd.responses.responses import map_type_field_mapping
 
 
 class AutoMD:
@@ -86,11 +86,10 @@ class AutoMD:
                 if param.default is None:
                     field_args["allow_none"] = param.default
 
-                if type_field_mapping[param.annotation] in [fields.Raw, fields.Field]:
+                if map_type_field_mapping(param.annotation) in [fields.Raw, fields.Field]:
                     field_args["description"] = "parameter of unspecified type"
 
-                # noinspection PyCallingNonCallable
-                field = type_field_mapping[param.annotation](**field_args)
+                field = map_type_field_mapping(param.annotation)(**field_args)
                 parameter_signature_dict[name] = field
             parameter_object = parameter_signature_dict
 

@@ -3,6 +3,7 @@ from inspect import Signature
 from typing import Callable, Dict, List
 
 from automd.keys import AutoMDKeys
+from automd.responses.responses import map_response_object_type
 
 
 def automd(parameter_schema: Dict = None,
@@ -18,9 +19,7 @@ def automd(parameter_schema: Dict = None,
     :return:
     """
     def automd_wrapper(func: Callable) -> Callable:
-        return_type = getattr(func, "__annotations__", {}).get("return")
-        if inspect.signature(func).return_annotation != Signature.empty:
-            return_type = inspect.signature(func).return_annotation
+        return_type = map_response_object_type(inspect.signature(func).return_annotation)
 
         automd_spec_parameters = {}
 
@@ -40,7 +39,7 @@ def automd(parameter_schema: Dict = None,
         automd_spec_parameters["func_signature"] = inspect.signature(func)
 
         automd_spec_parameters["response_schemas"] = {
-            "200": return_type
+            200: return_type
         }
 
         setattr(func, AutoMDKeys.function.value, automd_spec_parameters)
@@ -75,12 +74,21 @@ def override_webargs_flaskparser():
         for arg in argmap.values():
             arg.metadata["location"] = location
 
+        parser_args: Dict = {
+            "as_kwargs": as_kwargs,
+            "validate": validate,
+            "error_status_code": error_status_code,
+            "error_headers": error_headers
+        }
+
+        flask_parser_signature: Signature = inspect.signature(fp.parser.use_args)
+        if "location" in flask_parser_signature.parameters.keys():
+            parser_args["location"] = location
+        if "locations" in flask_parser_signature.parameters.keys():
+            parser_args["locations"] = [location]
+
         return fp.parser.use_args(argmap, req, *args,
-                                  location=location,
-                                  as_kwargs=as_kwargs,
-                                  validate=validate,
-                                  error_status_code=error_status_code,
-                                  error_headers=error_headers)
+                                  **parser_args)
 
     def automd_use_kwargs(*args, **kwargs) -> Callable:
         kwargs["as_kwargs"] = True

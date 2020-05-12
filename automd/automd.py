@@ -128,24 +128,16 @@ class AutoMD:
 
     # TODO: nicer return than tuple
     @staticmethod
-    def parse_response_schema(response_object: Union[Type, ResponseObjectInterface],
+    def parse_response_schema(response_interface: Union[ResponseObjectInterface, Type[ResponseObjectInterface]],
                               path_url: str,
                               http_verb: str) -> Tuple[Schema, str]:
         """
 
-        :param response_object:
+        :param response_interface:
         :param path_url:
         :param http_verb:
         :return: Response Schema, content-type
         """
-        response_interface: ResponseObjectInterface
-        if response_object in response_object_type_map.keys():
-            response_interface = response_object_type_map[response_object]
-        elif getattr(response_object, "_name", None) in response_object_type_map.keys():
-            response_interface = response_object_type_map[response_object._name]
-        else:
-            response_interface = response_object
-
         response_schema: Union[Schema, type]
         if response_interface is not None:
             response_schema = response_interface.to_schema()
@@ -264,16 +256,18 @@ class AutoMD:
                     summary: str = automd_spec_parameters.get("summary")
                     description: str = automd_spec_parameters.get("description")
                     tags: List[Dict] = automd_spec_parameters.get("tags")
-                    self.register_path(automd_spec,
-                                       key,
-                                       method,
-                                       200,
-                                       summary,
-                                       description,
-                                       parameter_schema,
-                                       response_schemas["200"],
-                                       func_signature,
-                                       tags)
+
+                    for response_code, response in response_schemas.items():
+                        self.register_path(automd_spec,
+                                           key,
+                                           method,
+                                           response_code,
+                                           summary,
+                                           description,
+                                           parameter_schema,
+                                           response,
+                                           func_signature,
+                                           tags)
 
     def parse_flask_restful(self, automd_spec: APISpec, view):
         method: str
@@ -297,13 +291,15 @@ class AutoMD:
                 summary: str = automd_spec_parameters.get("summary")
                 description: str = automd_spec_parameters.get("description")
                 tags: List[Dict] = automd_spec_parameters.get("tags")
-                self.register_path(automd_spec,
-                                   key,
-                                   method,
-                                   200,
-                                   summary,
-                                   description,
-                                   parameter_schema,
-                                   response_schemas["200"],
-                                   func_signature,
-                                   tags)
+
+                for response_code, response in response_schemas.items():
+                    self.register_path(automd_spec,
+                                       key,
+                                       method,
+                                       response_code,
+                                       summary,
+                                       description,
+                                       parameter_schema,
+                                       response,
+                                       func_signature,
+                                       tags)

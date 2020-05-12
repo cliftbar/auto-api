@@ -75,12 +75,21 @@ def override_webargs_flaskparser():
         for arg in argmap.values():
             arg.metadata["location"] = location
 
+        parser_args: Dict = {
+            "as_kwargs": as_kwargs,
+            "validate": validate,
+            "error_status_code": error_status_code,
+            "error_headers": error_headers
+        }
+
+        flask_parser_signature: Signature = inspect.signature(fp.parser.use_args)
+        if "location" in flask_parser_signature.parameters.keys():
+            parser_args["location"] = location
+        if "locations" in flask_parser_signature.parameters.keys():
+            parser_args["locations"] = [location]
+
         return fp.parser.use_args(argmap, req, *args,
-                                  location=location,
-                                  as_kwargs=as_kwargs,
-                                  validate=validate,
-                                  error_status_code=error_status_code,
-                                  error_headers=error_headers)
+                                  **parser_args)
 
     def automd_use_kwargs(*args, **kwargs) -> Callable:
         kwargs["as_kwargs"] = True

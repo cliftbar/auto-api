@@ -3,6 +3,7 @@ from inspect import Signature
 from typing import Callable, Dict, List
 
 from automd.keys import AutoMDKeys
+from automd.responses.responses import map_response_object_type
 
 
 def automd(parameter_schema: Dict = None,
@@ -18,9 +19,7 @@ def automd(parameter_schema: Dict = None,
     :return:
     """
     def automd_wrapper(func: Callable) -> Callable:
-        return_type = getattr(func, "__annotations__", {}).get("return")
-        if inspect.signature(func).return_annotation != Signature.empty:
-            return_type = inspect.signature(func).return_annotation
+        return_type = map_response_object_type(inspect.signature(func).return_annotation)
 
         automd_spec_parameters = {}
 
@@ -40,7 +39,7 @@ def automd(parameter_schema: Dict = None,
         automd_spec_parameters["func_signature"] = inspect.signature(func)
 
         automd_spec_parameters["response_schemas"] = {
-            "200": return_type
+            200: return_type
         }
 
         setattr(func, AutoMDKeys.function.value, automd_spec_parameters)

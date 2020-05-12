@@ -3,6 +3,7 @@ from typing import Dict
 
 from automd.decorators import disable_automd, automd
 from automd.keys import AutoMDKeys
+from automd.responses import IntegerResponse
 
 
 def test_automd_decorator_inputs():
@@ -38,7 +39,7 @@ def test_automd_decorator_inspections():
 
     assert func_sig.parameters["arg_1"].annotation == str
     assert func_sig.parameters["arg_2"].annotation == bool
-    assert automd_params["response_schemas"] == {"200": int}
+    assert automd_params["response_schemas"] == {200: IntegerResponse}
 
 
 def test_disable_automd_decorator():

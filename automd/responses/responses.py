@@ -1,7 +1,7 @@
 from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
-from typing import Union, Dict, List, Any, AnyStr, Text
+from typing import Union, Dict, List, Any, AnyStr, Text, Type
 
 from marshmallow import Schema, fields
 
@@ -226,20 +226,44 @@ class FloatResponse(ResponseObjectInterface):
         return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
-response_object_type_map: Dict = {
+response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     int: IntegerResponse,
     "int": IntegerResponse,
-    float: IntegerResponse,
-    "float": IntegerResponse,
+    float: FloatResponse,
+    "float": FloatResponse,
     str: StringResponse,
     "str": StringResponse,
     list: ListResponse,
+    "list": ListResponse,
     List: ListResponse,
+    getattr(List, "_name", "List._name"): ListResponse,
+    getattr(List, "_gorg", "List._gorg"): ListResponse,
     "List": ListResponse,
     dict: DictResponse,
+    "dict": DictResponse,
     Dict: DictResponse,
-    "Dict": DictResponse
+    getattr(Dict, "_name", "Dict._name"): DictResponse,
+    getattr(Dict, "_gorg", "Dict._gorg"): DictResponse,
+    "Dict": DictResponse,
+    Signature.empty: None,
+    Any: ValueResponse,
+    getattr(Any, "_name", "Any._name"): ValueResponse,
+    getattr(Any, "_gorg", "Any._gorg"): ValueResponse,
+    "Any": ValueResponse
 }
+
+
+def map_response_object_type(key: Any,
+                             default: Union[ResponseObjectInterface, Type[ResponseObjectInterface]] = None
+                             ) -> Type[ResponseObjectInterface]:
+    ret_interface: Type[ResponseObjectInterface] = response_object_type_map.get(key)
+
+    if ret_interface is None:
+        name: str = getattr(key, "_name", getattr(key, "_gorg", None))
+        ret_interface = response_object_type_map.get(name)
+
+    return ret_interface or default
+
 
 type_field_mapping: Dict[Any, fields.Field] = {
     bool: fields.Boolean,

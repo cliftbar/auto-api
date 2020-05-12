@@ -16,7 +16,7 @@ setup(
     description="AutoMD is a documentation library for Flask APIs build with FlaskRESTful and Webargs.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    packages=find_packages(include="automd"),
+    packages=find_packages(include=["automd", "automd.*"]),
     python_requires=">=3.6",
     zip_safe=False,
     include_package_data=True,

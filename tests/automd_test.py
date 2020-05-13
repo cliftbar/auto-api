@@ -1,6 +1,6 @@
 import inspect
 from inspect import Signature
-from typing import Dict
+from typing import Dict, List, Any
 
 from marshmallow import Schema
 from webargs import fields
@@ -48,6 +48,31 @@ class TestAutoMD:
         assert isinstance(result_schema.fields["query"].schema.fields["foo"], fields.String)
         assert isinstance(result_schema.fields["query"].schema.fields["bar"], fields.Integer)
 
+    def test_parse_parameter_no_schema_complex(self):
+        parameter_schema: Dict = None
+
+        def func(foo: List[int], bar: Dict[str, Any]):
+            pass
+
+        function_signature: Signature = inspect.signature(func)
+
+        url: str = "/test"
+        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema, function_signature, url, HTTPVerb.get.value)
+
+        assert list(result_schema.fields.keys()) == ["query"]
+        assert result_schema.fields["query"].metadata == {"location": "query", "name": "query"}
+        assert list(result_schema.fields["query"].schema.fields.keys()).sort() == ["foo", "bar"].sort()
+
+        assert isinstance(result_schema.fields["query"].schema.fields["foo"], fields.List)
+        assert isinstance(result_schema.fields["query"].schema.fields["foo"].inner, fields.Integer)
+
+        assert isinstance(result_schema.fields["query"].schema.fields["bar"], fields.Dict)
+        assert isinstance(result_schema.fields["query"].schema.fields["bar"].key_field, fields.String)
+        assert isinstance(result_schema.fields["query"].schema.fields["bar"].value_field, fields.Raw)
+
+    ##########################
+    # Response Object Checks #
+    ##########################
     def test_parse_response_integer_object(self):
         url: str = "/test"
         result_schema: Schema

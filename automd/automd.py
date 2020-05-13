@@ -4,8 +4,7 @@ import mimetypes
 from http.client import responses
 from inspect import Signature
 from typing import Dict, Union, List, Callable, Type, Tuple
-from marshmallow import Schema
-from webargs import fields
+from marshmallow import Schema, fields
 from werkzeug.local import LocalProxy
 from flask import url_for, Flask
 
@@ -17,7 +16,7 @@ from automd.decorators import automd
 from automd.http_verbs import HTTPVerb
 from automd.keys import AutoMDKeys
 from automd.responses import ResponseObjectInterface
-from automd.responses.responses import map_type_field_mapping
+from automd.responses.responses import map_type_field_mapping, type_to_field
 
 
 class AutoMD:
@@ -89,7 +88,7 @@ class AutoMD:
                 if map_type_field_mapping(param.annotation) in [fields.Raw, fields.Field]:
                     field_args["description"] = "parameter of unspecified type"
 
-                field = map_type_field_mapping(param.annotation)(**field_args)
+                field: fields.Field = type_to_field(param.annotation, **field_args)
                 parameter_signature_dict[name] = field
             parameter_object = parameter_signature_dict
 

@@ -1,6 +1,7 @@
 from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
+import typing
 from typing import Union, Dict, List, Any, AnyStr, Text, Type
 
 from marshmallow import Schema, fields
@@ -305,3 +306,38 @@ def map_type_field_mapping(key: Any,
         ret_field = type_field_mapping.get(name)
 
     return ret_field or default
+
+
+def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Field:
+    field_class: Type[fields.Field] = map_type_field_mapping(key, default)
+
+    field_args: List = []
+    if field_class == fields.List:
+        list_field: fields.Field = fields.Raw()
+        try:
+            list_field: fields.Field = map_type_field_mapping(typing.get_args(key)[0])()
+        except:
+            try:
+                list_field: fields.Field = map_type_field_mapping(key.__args__[0])()
+            except:
+                pass
+
+        field_args.append(list_field)
+    elif field_class == fields.Dict:
+        key_field: fields.Field = fields.Raw()
+        value_field: fields.Field = fields.Raw()
+
+        try:  # Try Python 3.8 method
+            key_field: fields.Field = map_type_field_mapping(typing.get_args(key)[0])()
+            value_field: fields.Field = map_type_field_mapping(typing.get_args(key)[1])()
+        except:
+            try:  # Then try Python 3.6/3.7
+                key_field: fields.Field = map_type_field_mapping(key.__args__[0])()
+                value_field: fields.Field = map_type_field_mapping(key.__args__[1])()
+            except:
+                pass
+
+        kwargs["keys"] = key_field
+        kwargs["values"] = value_field
+
+    return field_class(*field_args, **kwargs)

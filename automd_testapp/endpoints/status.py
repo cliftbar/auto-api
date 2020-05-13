@@ -1,3 +1,5 @@
+from typing import List, Dict, Any
+
 from flask_restful import Resource
 from webargs import fields
 from webargs.flaskparser import use_kwargs
@@ -81,7 +83,10 @@ class IntrospectionStatus(Resource):
 
     @automd()
     @use_kwargs(post_query_arguments, location="json")
-    def post(self, text: str = "Hello AutoMD") -> str:
+    def post(self,
+             text: str = "Hello AutoMD",
+             complex_list: List[str] = None,
+             complex_dict: Dict[str, Any] = None) -> str:
         ret_text: str = "status check OK"
 
         if text is not None:

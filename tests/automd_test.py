@@ -1,6 +1,6 @@
 import inspect
 from inspect import Signature
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 from marshmallow import Schema
 from webargs import fields
@@ -51,7 +51,8 @@ class TestAutoMD:
     def test_parse_parameter_no_schema_complex(self):
         parameter_schema: Dict = None
 
-        def func(foo: List[int], bar: Dict[str, Any]):
+        # foo: List[int], bar: Dict[str, Any],
+        def func(baz: Optional[List[str]]):
             pass
 
         function_signature: Signature = inspect.signature(func)

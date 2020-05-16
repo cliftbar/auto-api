@@ -2,7 +2,7 @@ from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
 import typing
-from typing import Union, Dict, List, Any, AnyStr, Text, Type
+from typing import Union, Dict, List, Any, AnyStr, Text, Type, Optional
 
 from marshmallow import Schema, fields
 
@@ -296,13 +296,16 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
     Signature.empty: fields.Raw,
 }
 
+def get_base_type(key: Type):
+    return getattr(key, "_name", getattr(key, "_gorg", None))
+
 
 def map_type_field_mapping(key: Any,
                            default: fields.Field = None) -> Type[fields.Field]:
     ret_field: Type[fields.Field] = type_field_mapping.get(key)
 
     if ret_field is None:
-        name: str = getattr(key, "_name", getattr(key, "_gorg", None))
+        name: str = get_base_type(key)
         ret_field = type_field_mapping.get(name)
 
     return ret_field or default
@@ -315,10 +318,10 @@ def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Fi
     if field_class == fields.List:
         list_field: fields.Field = fields.Raw()
         try:
-            list_field: fields.Field = map_type_field_mapping(typing.get_args(key)[0])()
+            list_field = map_type_field_mapping(typing.get_args(key)[0])()
         except:
             try:
-                list_field: fields.Field = map_type_field_mapping(key.__args__[0])()
+                list_field = map_type_field_mapping(key.__args__[0])()
             except:
                 pass
 
@@ -328,16 +331,69 @@ def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Fi
         value_field: fields.Field = fields.Raw()
 
         try:  # Try Python 3.8 method
-            key_field: fields.Field = map_type_field_mapping(typing.get_args(key)[0])()
-            value_field: fields.Field = map_type_field_mapping(typing.get_args(key)[1])()
+            key_field = map_type_field_mapping(typing.get_args(key)[0])()
+            value_field = map_type_field_mapping(typing.get_args(key)[1])()
         except:
             try:  # Then try Python 3.6/3.7
-                key_field: fields.Field = map_type_field_mapping(key.__args__[0])()
-                value_field: fields.Field = map_type_field_mapping(key.__args__[1])()
+                key_field = map_type_field_mapping(key.__args__[0])()
+                value_field = map_type_field_mapping(key.__args__[1])()
             except:
                 pass
 
         kwargs["keys"] = key_field
         kwargs["values"] = value_field
+    elif field_class == Union:
+        field_class = fields.Raw
+        field_class, new_args, new_kwargs = _type_to_field(key)
+        kwargs["description"] = f""
 
     return field_class(*field_args, **kwargs)
+
+
+def _type_to_field(key: Any, default: fields.Field = None) -> Type[fields.Field]:
+    field_class: Type[fields.Field] = map_type_field_mapping(key, default)
+    ret_args: List = []
+    ret_kwargs: Dict = {}
+
+    if field_class == fields.List:
+        list_field: Type[fields.Field] = fields.Raw
+        try:
+            list_field = map_type_field_mapping(typing.get_args(key)[0])
+        except:
+            try:
+                list_field = map_type_field_mapping(key.__args__[0])
+            except:
+                pass
+
+        ret_args.append(list_field)
+    elif field_class == fields.Dict:
+        key_field: Type[fields.Field] = fields.Raw
+        value_field: Type[fields.Field] = fields.Raw
+
+        try:  # Try Python 3.8 method
+            key_field = map_type_field_mapping(typing.get_args(key)[0])
+            value_field = map_type_field_mapping(typing.get_args(key)[1])
+        except:
+            try:  # Then try Python 3.6/3.7
+                key_field = map_type_field_mapping(key.__args__[0])
+                value_field = map_type_field_mapping(key.__args__[1])
+            except:
+                pass
+        ret_kwargs["keys"] = key_field
+        ret_kwargs["values"] = value_field
+    elif key == Union:
+        field_class = fields.Raw
+
+        key_inner_args: List[Type] = []
+        try:  # Try Python 3.8 method
+            key_inner_args = list(typing.get_args(key))
+        except:
+            try:  # Then try Python 3.6/3.7
+                key_inner_args = key.__args__
+            except:
+                pass
+        field_class = _type_to_field(key_inner_args[0])
+        ret_kwargs["description"] = ", ".join(key_inner_args)
+
+    return field_class, ret_args, ret_kwargs
+

@@ -1,5 +1,6 @@
 import inspect
 import typing
+from typing import List, Dict
 from inspect import Signature
 
 from marshmallow import fields
@@ -10,7 +11,7 @@ from automd.responses.responses import (map_response_object_type,
                                         FloatResponse,
                                         DictResponse,
                                         ListResponse,
-                                        ValueResponse, map_type_field_mapping, type_to_field)
+                                        ValueResponse, map_type_field_mapping, recursive_one)
 
 
 def test_map_response_object_type_str():
@@ -132,24 +133,88 @@ def test_map_type_field_mapping_any():
 
 
 class TestResponsesTypeToField:
+    def test_any(self):
+        field: fields.Field = recursive_one(typing.Any)
+
+        assert isinstance(field, fields.Raw)
+
+    def test_empty(self):
+        field: fields.Field = recursive_one(inspect.Signature.empty)
+
+        assert isinstance(field, fields.Raw)
+
+    def test_bool(self):
+        field: fields.Field = recursive_one(bool)
+
+        assert isinstance(field, fields.Boolean)
+
+    def test_int(self):
+        field: fields.Field = recursive_one(int)
+
+        assert isinstance(field, fields.Integer)
+
+    def test_float(self):
+        field: fields.Field = recursive_one(float)
+
+        assert isinstance(field, fields.Float)
+
+    def test_str(self):
+        field: fields.Field = recursive_one(str)
+
+        assert isinstance(field, fields.String)
 
     def test_union_basic(self):
-        field: fields.Field = type_to_field(typing.Union[str, int], {})
+        field: fields.Field = recursive_one(typing.Union[str, int])
 
-        assert type(field) == fields.Raw
-        assert field.required
-        assert field.metadata["description"] == "'<class 'str'>, <class 'int'>'"
+        assert isinstance(field, fields.Raw)
+        assert field.metadata["description"] == "Multiple Types Allowed: <class 'str'>, <class 'int'>"
 
-    def test_union_complex(self):
-        field: fields.Field = type_to_field(typing.Union[typing.List[str], str], {})
+    def test_list(self):
+        field: fields.Field = recursive_one(typing.List)
 
-        assert type(field) == fields.Raw
-        assert field.required
-        assert field.metadata["description"] == "'typing.List[str], <class 'str'>'"
+        assert isinstance(field, fields.List)
+        assert isinstance(field.inner, fields.Raw)
+
+    def test_list_complex(self):
+        field: fields.Field = recursive_one(List[List])
+
+        assert type(field) == fields.List
+        assert type(field.inner) == fields.List
+        assert type(field.inner.inner) == fields.Raw
+
+    def test_dict(self):
+        field: fields.Field = recursive_one(Dict)
+
+        assert isinstance(field, fields.Dict)
+        assert isinstance(field.key_field, fields.Raw)
+        assert isinstance(field.value_field, fields.Raw)
+
+    def test_dict_complex(self):
+        field: fields.Field = recursive_one(Dict[str, int])
+
+        assert isinstance(field, fields.Dict)
+        assert isinstance(field.key_field, fields.String)
+        assert isinstance(field.value_field, fields.Integer)
+
+    def test_optional(self):
+        field: fields.Field = recursive_one(typing.Optional[str])
+
+        assert isinstance(field, fields.String)
 
     def test_optional_complex(self):
-        field: fields.Field = type_to_field(typing.Union[typing.List[str], str], {})
+        field: fields.Field = recursive_one(typing.Optional[List[str]])
 
-        assert type(field) == fields.Raw
-        assert field.required
-        assert field.metadata["description"] == "'typing.List[str], <class 'str'>'"
+        assert isinstance(field, fields.List)
+        assert isinstance(field.inner, fields.String)
+
+    def test_union(self):
+        field: fields.Field = recursive_one(typing.Union[int, str])
+
+        assert isinstance(field, fields.Raw)
+        assert field.metadata["description"] == "Multiple Types Allowed: <class 'int'>, <class 'str'>"
+
+    def test_union_complex(self):
+        field: fields.Field = recursive_one(typing.Union[typing.List[str], Dict[str, bool]])
+
+        assert isinstance(field, fields.Raw)
+        assert field.metadata["description"] == "Multiple Types Allowed: typing.List[str], typing.Dict[str, bool]"

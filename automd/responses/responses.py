@@ -312,7 +312,7 @@ def get_base_maptype(key: Type):
 
 
 def map_type_field_mapping(key: Any,
-                           default: fields.Field = None) -> Type[fields.Field]:
+                           default: Type[fields.Field] = None) -> Type[fields.Field]:
     ret_field: Type[fields.Field] = type_field_mapping.get(key)
 
     if ret_field is None:
@@ -321,93 +321,156 @@ def map_type_field_mapping(key: Any,
 
     return ret_field or default
 
+#
+# def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Field:
+#     field_class: Type[fields.Field] = map_type_field_mapping(key, default)
+#
+#     field_args: List = []
+#     if field_class == fields.List:
+#         list_field: fields.Field = fields.Raw()
+#         try:
+#             list_field = map_type_field_mapping(typing.get_args(key)[0])()
+#         except:
+#             try:
+#                 list_field = map_type_field_mapping(key.__args__[0])()
+#             except:
+#                 pass
+#
+#         field_args.append(list_field)
+#     elif field_class == fields.Dict:
+#         key_field: fields.Field = fields.Raw()
+#         value_field: fields.Field = fields.Raw()
+#
+#         try:  # Try Python 3.8 method
+#             key_field = map_type_field_mapping(typing.get_args(key)[0])()
+#             value_field = map_type_field_mapping(typing.get_args(key)[1])()
+#         except:
+#             try:  # Then try Python 3.6/3.7
+#                 key_field = map_type_field_mapping(key.__args__[0])()
+#                 value_field = map_type_field_mapping(key.__args__[1])()
+#             except:
+#                 pass
+#
+#         kwargs["keys"] = key_field
+#         kwargs["values"] = value_field
+#     elif get_base_maptype(key) == get_base_maptype(Union):
+#         field_class, new_args, new_kwargs = _type_to_field(key)
+#         kwargs = {**kwargs, **new_kwargs}
+#         field_args = [*field_args, *new_args]
+#
+#     return field_class(*field_args, **kwargs)
+#
+#
+# def _type_to_field(key: Any, input_args, input_kwargs, default: fields.Field = None) -> typing.Tuple[fields.Field, List, Dict]:
+#     field_class: Type[fields.Field] = map_type_field_mapping(key, default)
+#     ret_args: List = input_args
+#     ret_kwargs: Dict = input_kwargs
+#
+#     if field_class == fields.List:
+#         list_field: Type[fields.Field] = fields.Raw
+#         try:
+#             list_field = map_type_field_mapping(typing.get_args(key)[0])
+#         except:
+#             try:
+#                 list_field = map_type_field_mapping(key.__args__[0])
+#             except:
+#                 pass
+#
+#         ret_args.append(list_field)
+#     elif field_class == fields.Dict:
+#         key_field: Type[fields.Field] = fields.Raw
+#         value_field: Type[fields.Field] = fields.Raw
+#
+#         try:  # Try Python 3.8 method
+#             key_field = map_type_field_mapping(typing.get_args(key)[0])
+#             value_field = map_type_field_mapping(typing.get_args(key)[1])
+#         except:
+#             try:  # Then try Python 3.6/3.7
+#                 key_field = map_type_field_mapping(key.__args__[0])
+#                 value_field = map_type_field_mapping(key.__args__[1])
+#             except:
+#                 pass
+#         ret_kwargs["keys"] = key_field
+#         ret_kwargs["values"] = value_field
+#     elif get_base_maptype(key) == get_base_maptype(Union):
+#         field_class = fields.Raw
+#
+#         key_inner_args: List[Type] = []
+#         try:  # Try Python 3.8 method
+#             key_inner_args = list(typing.get_args(key))
+#         except:
+#             try:  # Then try Python 3.6/3.7
+#                 key_inner_args = key.__args__
+#             except:
+#                 pass
+#
+#         if type(None) in key_inner_args:
+#             field_class, new_args, new_kwargs = _type_to_field(key_inner_args[0])
+#             ret_args = [*ret_args, *new_args]
+#         else:
+#             ret_kwargs["description"] = ", ".join([str(x) for x in key_inner_args])
+#
+#     return field_class(*ret_args, **ret_kwargs)  # field_class, ret_args, ret_kwargs
 
-def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Field:
-    field_class: Type[fields.Field] = map_type_field_mapping(key, default)
+
+def _recursive_one(input_type: Any, input_args, input_kwargs) -> fields.Field:
+    pass
+
+
+def recursive_one(input_type: Any, **input_kwargs) -> fields.Field:
+    field_class: Type[fields.Field] = map_type_field_mapping(input_type, fields.Raw)
 
     field_args: List = []
-    if field_class == fields.List:
-        list_field: fields.Field = fields.Raw()
+
+    ret_field: fields.Field
+    if map_response_object_type(input_type) == map_response_object_type(List):
+        list_inner_type: Type = Any
+
         try:
-            list_field = map_type_field_mapping(typing.get_args(key)[0])()
+            list_inner_type = typing.get_args(input_type)[0]
         except:
             try:
-                list_field = map_type_field_mapping(key.__args__[0])()
+                list_inner_type = input_type.__args__[0]
             except:
                 pass
 
-        field_args.append(list_field)
-    elif field_class == fields.Dict:
-        key_field: fields.Field = fields.Raw()
-        value_field: fields.Field = fields.Raw()
+        inner_field = recursive_one(list_inner_type)
+        field_args = [inner_field, *field_args]
+    elif map_response_object_type(input_type) == map_response_object_type(Dict):
+        dict_key_type: Type = Any
+        dict_value_type: Type = Any
 
         try:  # Try Python 3.8 method
-            key_field = map_type_field_mapping(typing.get_args(key)[0])()
-            value_field = map_type_field_mapping(typing.get_args(key)[1])()
+            dict_key_type = typing.get_args(input_type)[0]
+            dict_value_type = typing.get_args(input_type)[1]
         except:
             try:  # Then try Python 3.6/3.7
-                key_field = map_type_field_mapping(key.__args__[0])()
-                value_field = map_type_field_mapping(key.__args__[1])()
+                dict_key_type = input_type.__args__[0]
+                dict_value_type = input_type.__args__[1]
             except:
                 pass
 
-        kwargs["keys"] = key_field
-        kwargs["values"] = value_field
-    elif get_base_maptype(key) == get_base_maptype(Union):
-        field_class = fields.Raw
-        new_field_class, new_args, new_kwargs = _type_to_field(key)
-        kwargs = {**kwargs, **new_kwargs}
-        field_args = [*field_args, *new_args]
-
-    return field_class(*field_args, **kwargs)
-
-
-def _type_to_field(key: Any, default: fields.Field = None) -> Type[fields.Field]:
-    field_class: Type[fields.Field] = map_type_field_mapping(key, default)
-    ret_args: List = []
-    ret_kwargs: Dict = {}
-
-    if field_class == fields.List:
-        list_field: Type[fields.Field] = fields.Raw
-        try:
-            list_field = map_type_field_mapping(typing.get_args(key)[0])
-        except:
-            try:
-                list_field = map_type_field_mapping(key.__args__[0])
-            except:
-                pass
-
-        ret_args.append(list_field)
-    elif field_class == fields.Dict:
-        key_field: Type[fields.Field] = fields.Raw
-        value_field: Type[fields.Field] = fields.Raw
-
-        try:  # Try Python 3.8 method
-            key_field = map_type_field_mapping(typing.get_args(key)[0])
-            value_field = map_type_field_mapping(typing.get_args(key)[1])
-        except:
-            try:  # Then try Python 3.6/3.7
-                key_field = map_type_field_mapping(key.__args__[0])
-                value_field = map_type_field_mapping(key.__args__[1])
-            except:
-                pass
-        ret_kwargs["keys"] = key_field
-        ret_kwargs["values"] = value_field
-    elif get_base_maptype(key) == get_base_maptype(Union):
-        field_class = fields.Raw
-
+        key_field = recursive_one(dict_key_type)
+        value_field = recursive_one(dict_value_type)
+        input_kwargs["keys"] = key_field
+        input_kwargs["values"] = value_field
+    elif map_response_object_type(input_type) == map_response_object_type(Union) and get_base_maptype(input_type) == get_base_maptype(Union):
         key_inner_args: List[Type] = []
         try:  # Try Python 3.8 method
-            key_inner_args = list(typing.get_args(key))
+            key_inner_args = list(typing.get_args(input_type))
         except:
             try:  # Then try Python 3.6/3.7
-                key_inner_args = key.__args__
+                key_inner_args = input_type.__args__
             except:
                 pass
-        field_class, new_args, new_kwargs = _type_to_field(key_inner_args[0])
-        if type(None) in key_inner_args:
-            ret_kwargs["required"] = False
-        ret_kwargs["description"] = ", ".join([str(x) for x in key_inner_args])
 
-    return field_class, ret_args, ret_kwargs
+        if type(None) in key_inner_args:
+            key_inner_args.remove(type(None))
+            return recursive_one(key_inner_args[0], **input_kwargs)
+        else:
+            input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([str(x) for x in key_inner_args])
+    else:
+        pass
+
+    return field_class(*field_args, **input_kwargs)
 

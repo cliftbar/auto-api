@@ -40,7 +40,10 @@ class TestAutoMD:
         function_signature: Signature = inspect.signature(func)
 
         url: str = "/test"
-        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema, function_signature, url, HTTPVerb.get.value)
+        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema,
+                                                              function_signature,
+                                                              url,
+                                                              HTTPVerb.get.value)
 
         assert list(result_schema.fields.keys()) == ["query"]
         assert result_schema.fields["query"].metadata == {"location": "query", "name": "query"}
@@ -74,7 +77,8 @@ class TestAutoMD:
         assert isinstance(result_schema.fields["query"].schema.fields["bar"].key_field, fields.String)
         assert isinstance(result_schema.fields["query"].schema.fields["bar"].value_field, fields.Raw)
 
-        assert isinstance(result_schema.fields["query"].schema.fields["baz"], fields.Raw)
+        assert isinstance(result_schema.fields["query"].schema.fields["baz"], fields.List)
+        assert isinstance(result_schema.fields["query"].schema.fields["baz"].inner, fields.String)
 
     ##########################
     # Response Object Checks #

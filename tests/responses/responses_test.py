@@ -1,3 +1,4 @@
+import inspect
 import typing
 from inspect import Signature
 
@@ -9,7 +10,7 @@ from automd.responses.responses import (map_response_object_type,
                                         FloatResponse,
                                         DictResponse,
                                         ListResponse,
-                                        ValueResponse, map_type_field_mapping)
+                                        ValueResponse, map_type_field_mapping, type_to_field)
 
 
 def test_map_response_object_type_str():
@@ -128,3 +129,27 @@ def test_map_type_field_mapping_any():
     assert map_type_field_mapping(getattr(typing.Any, "_name", "Any._name")) == fields.Raw
     assert map_type_field_mapping(getattr(typing.Any, "_gorg", "Any._gorg")) == fields.Raw
     assert map_type_field_mapping(Signature.empty) is fields.Raw
+
+
+class TestResponsesTypeToField:
+
+    def test_union_basic(self):
+        field: fields.Field = type_to_field(typing.Union[str, int], {})
+
+        assert type(field) == fields.Raw
+        assert field.required
+        assert field.metadata["description"] == "'<class 'str'>, <class 'int'>'"
+
+    def test_union_complex(self):
+        field: fields.Field = type_to_field(typing.Union[typing.List[str], str], {})
+
+        assert type(field) == fields.Raw
+        assert field.required
+        assert field.metadata["description"] == "'typing.List[str], <class 'str'>'"
+
+    def test_optional_complex(self):
+        field: fields.Field = type_to_field(typing.Union[typing.List[str], str], {})
+
+        assert type(field) == fields.Raw
+        assert field.required
+        assert field.metadata["description"] == "'typing.List[str], <class 'str'>'"

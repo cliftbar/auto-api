@@ -260,7 +260,7 @@ def map_response_object_type(key: Any,
     ret_interface: Type[ResponseObjectInterface] = response_object_type_map.get(key)
 
     if ret_interface is None:
-        name: str = getattr(key, "_name", getattr(key, "_gorg", None))
+        name: str = get_base_maptype(key)
         ret_interface = response_object_type_map.get(name)
 
     return ret_interface or default
@@ -294,10 +294,21 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
     getattr(Any, "_name", "Any._name"): fields.Raw,
     getattr(Any, "_gorg", "Any._gorg"): fields.Raw,
     Signature.empty: fields.Raw,
+    getattr(Union, "_name", "Union._name"): fields.Raw,
+    getattr(Union, "_gorg", "Union._gorg"): fields.Raw,
+    getattr(getattr(Union, "__origin__", "Union.origin.str"), "__str__", (lambda: "Union.origin.str"))(): fields.Raw
 }
 
-def get_base_type(key: Type):
-    return getattr(key, "_name", getattr(key, "_gorg", None))
+
+def get_base_maptype(key: Type):
+
+    ret = (key if key in type_field_mapping.keys() else None
+           or getattr(key, "_name", None)
+           or getattr(key, "_gorg", None)
+           or getattr(getattr(key, "__origin__", None), "_name", None)
+           or getattr(getattr(key, "__origin__", None), "__str__", (lambda: None))())
+
+    return ret
 
 
 def map_type_field_mapping(key: Any,
@@ -305,7 +316,7 @@ def map_type_field_mapping(key: Any,
     ret_field: Type[fields.Field] = type_field_mapping.get(key)
 
     if ret_field is None:
-        name: str = get_base_type(key)
+        name: str = get_base_maptype(key)
         ret_field = type_field_mapping.get(name)
 
     return ret_field or default
@@ -342,10 +353,11 @@ def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Fi
 
         kwargs["keys"] = key_field
         kwargs["values"] = value_field
-    elif field_class == Union:
+    elif get_base_maptype(key) == get_base_maptype(Union):
         field_class = fields.Raw
-        field_class, new_args, new_kwargs = _type_to_field(key)
-        kwargs["description"] = f""
+        new_field_class, new_args, new_kwargs = _type_to_field(key)
+        kwargs = {**kwargs, **new_kwargs}
+        field_args = [*field_args, *new_args]
 
     return field_class(*field_args, **kwargs)
 
@@ -381,7 +393,7 @@ def _type_to_field(key: Any, default: fields.Field = None) -> Type[fields.Field]
                 pass
         ret_kwargs["keys"] = key_field
         ret_kwargs["values"] = value_field
-    elif key == Union:
+    elif get_base_maptype(key) == get_base_maptype(Union):
         field_class = fields.Raw
 
         key_inner_args: List[Type] = []
@@ -392,8 +404,10 @@ def _type_to_field(key: Any, default: fields.Field = None) -> Type[fields.Field]
                 key_inner_args = key.__args__
             except:
                 pass
-        field_class = _type_to_field(key_inner_args[0])
-        ret_kwargs["description"] = ", ".join(key_inner_args)
+        field_class, new_args, new_kwargs = _type_to_field(key_inner_args[0])
+        if type(None) in key_inner_args:
+            ret_kwargs["required"] = False
+        ret_kwargs["description"] = ", ".join([str(x) for x in key_inner_args])
 
     return field_class, ret_args, ret_kwargs
 

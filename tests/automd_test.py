@@ -1,6 +1,6 @@
 import inspect
 from inspect import Signature
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 from marshmallow import Schema
 from webargs import fields
@@ -40,7 +40,10 @@ class TestAutoMD:
         function_signature: Signature = inspect.signature(func)
 
         url: str = "/test"
-        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema, function_signature, url, HTTPVerb.get.value)
+        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema,
+                                                              function_signature,
+                                                              url,
+                                                              HTTPVerb.get.value)
 
         assert list(result_schema.fields.keys()) == ["query"]
         assert result_schema.fields["query"].metadata == {"location": "query", "name": "query"}
@@ -51,17 +54,21 @@ class TestAutoMD:
     def test_parse_parameter_no_schema_complex(self):
         parameter_schema: Dict = None
 
-        def func(foo: List[int], bar: Dict[str, Any]):
+        def func(foo: List[int], bar: Dict[str, Any], baz: Optional[List[str]]):
             pass
 
         function_signature: Signature = inspect.signature(func)
 
         url: str = "/test"
-        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema, function_signature, url, HTTPVerb.get.value)
+
+        result_schema: Schema = AutoMD.parse_parameter_schema(parameter_schema,
+                                                              function_signature,
+                                                              url,
+                                                              HTTPVerb.get.value)
 
         assert list(result_schema.fields.keys()) == ["query"]
         assert result_schema.fields["query"].metadata == {"location": "query", "name": "query"}
-        assert list(result_schema.fields["query"].schema.fields.keys()).sort() == ["foo", "bar"].sort()
+        assert list(result_schema.fields["query"].schema.fields.keys()).sort() == ["foo", "bar", "baz"].sort()
 
         assert isinstance(result_schema.fields["query"].schema.fields["foo"], fields.List)
         assert isinstance(result_schema.fields["query"].schema.fields["foo"].inner, fields.Integer)
@@ -69,6 +76,9 @@ class TestAutoMD:
         assert isinstance(result_schema.fields["query"].schema.fields["bar"], fields.Dict)
         assert isinstance(result_schema.fields["query"].schema.fields["bar"].key_field, fields.String)
         assert isinstance(result_schema.fields["query"].schema.fields["bar"].value_field, fields.Raw)
+
+        assert isinstance(result_schema.fields["query"].schema.fields["baz"], fields.List)
+        assert isinstance(result_schema.fields["query"].schema.fields["baz"].inner, fields.String)
 
     ##########################
     # Response Object Checks #

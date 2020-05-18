@@ -1,4 +1,6 @@
+import inspect
 import typing
+from typing import List, Dict
 from inspect import Signature
 
 from marshmallow import fields
@@ -9,7 +11,7 @@ from automd.responses.responses import (map_response_object_type,
                                         FloatResponse,
                                         DictResponse,
                                         ListResponse,
-                                        ValueResponse, map_type_field_mapping)
+                                        ValueResponse, map_type_field_mapping, type_to_field, get_type_origin)
 
 
 def test_map_response_object_type_str():
@@ -99,8 +101,7 @@ def test_map_type_field_mapping_dict():
     assert map_type_field_mapping(typing.Dict) == fields.Dict
     assert map_type_field_mapping(typing.Dict[str, int]) == fields.Dict
     assert map_type_field_mapping(typing.Dict[SomeObject, typing.List]) == fields.Dict
-    assert map_type_field_mapping(getattr(typing.Dict, "_name", "Dict._name")) == fields.Dict
-    assert map_type_field_mapping(getattr(typing.Dict, "_gorg", "Dict._gorg")) == fields.Dict
+    assert map_type_field_mapping(get_type_origin(Dict)) == fields.Dict
     assert map_type_field_mapping("Dict") == fields.Dict
 
 
@@ -113,8 +114,7 @@ def test_map_type_field_mapping_list():
     assert map_type_field_mapping(typing.List) == fields.List
     assert map_type_field_mapping(typing.List[str]) == fields.List
     assert map_type_field_mapping(typing.List[SomeObject]) == fields.List
-    assert map_type_field_mapping(getattr(typing.List, "_name", "List._name")) == fields.List
-    assert map_type_field_mapping(getattr(typing.List, "_gorg", "List._gorg")) == fields.List
+    assert map_type_field_mapping(get_type_origin(List)) == fields.List
     assert map_type_field_mapping("List") == fields.List
 
 
@@ -128,3 +128,91 @@ def test_map_type_field_mapping_any():
     assert map_type_field_mapping(getattr(typing.Any, "_name", "Any._name")) == fields.Raw
     assert map_type_field_mapping(getattr(typing.Any, "_gorg", "Any._gorg")) == fields.Raw
     assert map_type_field_mapping(Signature.empty) is fields.Raw
+
+
+class TestResponsesTypeToField:
+    def test_any(self):
+        field: fields.Field = type_to_field(typing.Any)
+
+        assert isinstance(field, fields.Raw)
+
+    def test_empty(self):
+        field: fields.Field = type_to_field(inspect.Signature.empty)
+
+        assert isinstance(field, fields.Raw)
+
+    def test_bool(self):
+        field: fields.Field = type_to_field(bool)
+
+        assert isinstance(field, fields.Boolean)
+
+    def test_int(self):
+        field: fields.Field = type_to_field(int)
+
+        assert isinstance(field, fields.Integer)
+
+    def test_float(self):
+        field: fields.Field = type_to_field(float)
+
+        assert isinstance(field, fields.Float)
+
+    def test_str(self):
+        field: fields.Field = type_to_field(str)
+
+        assert isinstance(field, fields.String)
+
+    def test_union_basic(self):
+        field: fields.Field = type_to_field(typing.Union[str, int])
+
+        assert isinstance(field, fields.Raw)
+        assert field.metadata["description"] == "Multiple Types Allowed: <class 'str'>, <class 'int'>"
+
+    def test_list(self):
+        field: fields.Field = type_to_field(typing.List)
+
+        assert isinstance(field, fields.List)
+        assert isinstance(field.inner, fields.Raw)
+
+    def test_list_complex(self):
+        field: fields.Field = type_to_field(List[List])
+
+        assert type(field) == fields.List
+        assert type(field.inner) == fields.List
+        assert type(field.inner.inner) == fields.Raw
+
+    def test_dict(self):
+        field: fields.Field = type_to_field(Dict)
+
+        assert isinstance(field, fields.Dict)
+        assert isinstance(field.key_field, fields.Raw)
+        assert isinstance(field.value_field, fields.Raw)
+
+    def test_dict_complex(self):
+        field: fields.Field = type_to_field(Dict[str, int])
+
+        assert isinstance(field, fields.Dict)
+        assert isinstance(field.key_field, fields.String)
+        assert isinstance(field.value_field, fields.Integer)
+
+    def test_optional(self):
+        field: fields.Field = type_to_field(typing.Optional[str])
+
+        assert isinstance(field, fields.String)
+
+    def test_optional_complex(self):
+        field: fields.Field = type_to_field(typing.Optional[List[str]])
+
+        assert isinstance(field, fields.List)
+        assert isinstance(field.inner, fields.String)
+
+    def test_union(self):
+        field: fields.Field = type_to_field(typing.Union[int, str])
+
+        assert isinstance(field, fields.Raw)
+        assert field.metadata["description"] == "Multiple Types Allowed: <class 'int'>, <class 'str'>"
+
+    def test_union_complex(self):
+        field: fields.Field = type_to_field(typing.Union[typing.List[str], Dict[str, bool]])
+
+        assert isinstance(field, fields.Raw)
+        assert field.metadata["description"] == "Multiple Types Allowed: typing.List[str], typing.Dict[str, bool]"

@@ -322,7 +322,7 @@ def map_type_field_mapping(key: Any,
     return ret_field or default
 
 
-def recursive_one(input_type: Any, **input_kwargs) -> fields.Field:
+def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
     field_class: Type[fields.Field] = map_type_field_mapping(input_type, fields.Raw)
 
     field_args: List = []
@@ -339,7 +339,7 @@ def recursive_one(input_type: Any, **input_kwargs) -> fields.Field:
             except:
                 pass
 
-        inner_field = recursive_one(list_inner_type)
+        inner_field = type_to_field(list_inner_type)
         field_args = [inner_field, *field_args]
     elif map_type_field_mapping(input_type) == map_type_field_mapping(Dict):
         dict_key_type: Type = Any
@@ -355,8 +355,8 @@ def recursive_one(input_type: Any, **input_kwargs) -> fields.Field:
             except:
                 pass
 
-        key_field = recursive_one(dict_key_type)
-        value_field = recursive_one(dict_value_type)
+        key_field = type_to_field(dict_key_type)
+        value_field = type_to_field(dict_value_type)
         input_kwargs["keys"] = key_field
         input_kwargs["values"] = value_field
     elif get_type_origin(input_type) == get_type_origin(Union):
@@ -374,7 +374,7 @@ def recursive_one(input_type: Any, **input_kwargs) -> fields.Field:
             key_inner_args.remove(type(None))
 
         if len(key_inner_args) == 1:
-            return recursive_one(key_inner_args[0], **input_kwargs)
+            return type_to_field(key_inner_args[0], **input_kwargs)
         else:
             input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([str(x) for x in key_inner_args])
     else:

@@ -11,7 +11,7 @@ from automd.responses.responses import (map_response_object_type,
                                         FloatResponse,
                                         DictResponse,
                                         ListResponse,
-                                        ValueResponse, map_type_field_mapping, recursive_one)
+                                        ValueResponse, map_type_field_mapping, recursive_one, get_type_origin)
 
 
 def test_map_response_object_type_str():
@@ -101,8 +101,7 @@ def test_map_type_field_mapping_dict():
     assert map_type_field_mapping(typing.Dict) == fields.Dict
     assert map_type_field_mapping(typing.Dict[str, int]) == fields.Dict
     assert map_type_field_mapping(typing.Dict[SomeObject, typing.List]) == fields.Dict
-    assert map_type_field_mapping(getattr(typing.Dict, "_name", "Dict._name")) == fields.Dict
-    assert map_type_field_mapping(getattr(typing.Dict, "_gorg", "Dict._gorg")) == fields.Dict
+    assert map_type_field_mapping(get_type_origin(Dict)) == fields.Dict
     assert map_type_field_mapping("Dict") == fields.Dict
 
 
@@ -115,8 +114,7 @@ def test_map_type_field_mapping_list():
     assert map_type_field_mapping(typing.List) == fields.List
     assert map_type_field_mapping(typing.List[str]) == fields.List
     assert map_type_field_mapping(typing.List[SomeObject]) == fields.List
-    assert map_type_field_mapping(getattr(typing.List, "_name", "List._name")) == fields.List
-    assert map_type_field_mapping(getattr(typing.List, "_gorg", "List._gorg")) == fields.List
+    assert map_type_field_mapping(get_type_origin(List)) == fields.List
     assert map_type_field_mapping("List") == fields.List
 
 

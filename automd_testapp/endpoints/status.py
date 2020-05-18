@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union
 
 from flask_restful import Resource
 from webargs import fields
@@ -84,9 +84,12 @@ class IntrospectionStatus(Resource):
     @automd()
     @use_kwargs(post_query_arguments, location="json")
     def post(self,
+             multi_field: Union[str, int],
              text: str = "Hello AutoMD",
              complex_list: List[str] = None,
-             complex_dict: Dict[str, Any] = None) -> str:
+             complex_list_list: List[List[str]] = None,
+             complex_dict: Dict[str, Any] = None,
+             optional_bool: Optional[bool] = None) -> str:
         ret_text: str = "status check OK"
 
         if text is not None:

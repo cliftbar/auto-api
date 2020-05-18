@@ -2,7 +2,7 @@ from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
 import typing
-from typing import Union, Dict, List, Any, AnyStr, Text, Type
+from typing import Union, Dict, List, Any, AnyStr, Text, Type, Optional
 
 from marshmallow import Schema, fields
 
@@ -227,6 +227,19 @@ class FloatResponse(ResponseObjectInterface):
         return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
+def get_type_origin(key: Type) -> Type:
+    origin: Type
+    try:
+        origin = typing.get_origin(key)
+    except:
+        origin = getattr(key, "__origin__", None)
+
+    if origin is None:
+        origin = key
+
+    return origin
+
+
 response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     int: IntegerResponse,
     "int": IntegerResponse,
@@ -239,12 +252,14 @@ response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     List: ListResponse,
     getattr(List, "_name", "List._name"): ListResponse,
     getattr(List, "_gorg", "List._gorg"): ListResponse,
+    get_type_origin(List): ListResponse,
     "List": ListResponse,
     dict: DictResponse,
     "dict": DictResponse,
     Dict: DictResponse,
     getattr(Dict, "_name", "Dict._name"): DictResponse,
     getattr(Dict, "_gorg", "Dict._gorg"): DictResponse,
+    get_type_origin(Dict): DictResponse,
     "Dict": DictResponse,
     Signature.empty: None,
     Any: ValueResponse,
@@ -260,7 +275,7 @@ def map_response_object_type(key: Any,
     ret_interface: Type[ResponseObjectInterface] = response_object_type_map.get(key)
 
     if ret_interface is None:
-        name: str = getattr(key, "_name", getattr(key, "_gorg", None))
+        name: Type = get_type_origin(key)
         ret_interface = response_object_type_map.get(name)
 
     return ret_interface or default
@@ -281,63 +296,90 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
     "dict": fields.Dict,
     "Dict": fields.Dict,
     Dict: fields.Dict,
-    getattr(Dict, "_name", "Dict._name"): fields.Dict,
-    getattr(Dict, "_gorg", "Dict._gorg"): fields.Dict,
+    get_type_origin(Dict): fields.Dict,
     list: fields.List,
     "list": fields.List,
     "List": fields.List,
     List: fields.List,
-    getattr(List, "_name", "List._name"): fields.List,
-    getattr(List, "_gorg", "List._gorg"): fields.List,
+    get_type_origin(List): fields.List,
     Any: fields.Raw,
     "Any": fields.Raw,
     getattr(Any, "_name", "Any._name"): fields.Raw,
     getattr(Any, "_gorg", "Any._gorg"): fields.Raw,
     Signature.empty: fields.Raw,
+    get_type_origin(Union): fields.Raw,
+    None: None
 }
 
 
 def map_type_field_mapping(key: Any,
-                           default: fields.Field = None) -> Type[fields.Field]:
+                           default: Type[fields.Field] = None) -> Type[fields.Field]:
     ret_field: Type[fields.Field] = type_field_mapping.get(key)
 
     if ret_field is None:
-        name: str = getattr(key, "_name", getattr(key, "_gorg", None))
+        name: Type = get_type_origin(key)
         ret_field = type_field_mapping.get(name)
 
     return ret_field or default
 
 
-def type_to_field(key: Any, default: fields.Field = None, **kwargs) -> fields.Field:
-    field_class: Type[fields.Field] = map_type_field_mapping(key, default)
+def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
+    field_class: Type[fields.Field] = map_type_field_mapping(input_type, fields.Raw)
 
     field_args: List = []
-    if field_class == fields.List:
-        list_field: fields.Field = fields.Raw()
+
+    ret_field: fields.Field
+    if map_type_field_mapping(input_type) == map_type_field_mapping(List):
+        list_inner_type: Type = Any
+
         try:
-            list_field: fields.Field = map_type_field_mapping(typing.get_args(key)[0])()
+            list_inner_type = typing.get_args(input_type)[0]
         except:
             try:
-                list_field: fields.Field = map_type_field_mapping(key.__args__[0])()
+                list_inner_type = input_type.__args__[0]
             except:
                 pass
 
-        field_args.append(list_field)
-    elif field_class == fields.Dict:
-        key_field: fields.Field = fields.Raw()
-        value_field: fields.Field = fields.Raw()
+        inner_field = type_to_field(list_inner_type)
+        field_args = [inner_field, *field_args]
+    elif map_type_field_mapping(input_type) == map_type_field_mapping(Dict):
+        dict_key_type: Type = Any
+        dict_value_type: Type = Any
 
         try:  # Try Python 3.8 method
-            key_field: fields.Field = map_type_field_mapping(typing.get_args(key)[0])()
-            value_field: fields.Field = map_type_field_mapping(typing.get_args(key)[1])()
+            dict_key_type = typing.get_args(input_type)[0]
+            dict_value_type = typing.get_args(input_type)[1]
         except:
             try:  # Then try Python 3.6/3.7
-                key_field: fields.Field = map_type_field_mapping(key.__args__[0])()
-                value_field: fields.Field = map_type_field_mapping(key.__args__[1])()
+                dict_key_type = input_type.__args__[0]
+                dict_value_type = input_type.__args__[1]
             except:
                 pass
 
-        kwargs["keys"] = key_field
-        kwargs["values"] = value_field
+        key_field = type_to_field(dict_key_type)
+        value_field = type_to_field(dict_value_type)
+        input_kwargs["keys"] = key_field
+        input_kwargs["values"] = value_field
+    elif get_type_origin(input_type) == get_type_origin(Union):
+        key_inner_args: List[Type] = []
+        try:  # Try Python 3.8 method
+            key_inner_args = list(typing.get_args(input_type))
+        except:
+            try:  # Then try Python 3.6/3.7
+                key_inner_args = input_type.__args__
+            except:
+                pass
 
-    return field_class(*field_args, **kwargs)
+        if type(None) in key_inner_args:
+            key_inner_args = list(key_inner_args)
+            key_inner_args.remove(type(None))
+
+        if len(key_inner_args) == 1:
+            return type_to_field(key_inner_args[0], **input_kwargs)
+        else:
+            input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([str(x) for x in key_inner_args])
+    else:
+        pass
+
+    return field_class(*field_args, **input_kwargs)
+

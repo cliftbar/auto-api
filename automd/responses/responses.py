@@ -226,7 +226,8 @@ class FloatResponse(ResponseObjectInterface):
     def content_type() -> str:
         return mimetypes.MimeTypes().types_map[1][".txt"]
 
-def get_type_origin(key: Type):
+
+def get_type_origin(key: Type) -> Type:
     origin: Type
     try:
         origin = typing.get_origin(key)

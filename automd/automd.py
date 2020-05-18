@@ -88,8 +88,6 @@ class AutoMD:
                 if map_type_field_mapping(param.annotation) in [fields.Raw, fields.Field]:
                     field_args["description"] = "parameter of unspecified type"
 
-                field_args["name"] = param.name
-
                 field: fields.Field = type_to_field(param.annotation, **field_args)
                 parameter_signature_dict[name] = field
             parameter_object = parameter_signature_dict

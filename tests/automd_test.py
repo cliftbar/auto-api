@@ -1,6 +1,6 @@
 import inspect
 from inspect import Signature
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 from marshmallow import Schema
 from webargs import fields
@@ -8,6 +8,7 @@ from webargs import fields
 from automd.automd import AutoMD
 from automd.http_verbs import HTTPVerb
 from automd.responses import IntegerResponse, JSONResponse, DictResponse, StringResponse
+from automd.responses.responses import TupleResponse
 
 
 class TestAutoMD:
@@ -80,6 +81,23 @@ class TestAutoMD:
         assert isinstance(result_schema.fields["query"].schema.fields["baz"], fields.List)
         assert isinstance(result_schema.fields["query"].schema.fields["baz"].inner, fields.String)
 
+    def test_parse_parameter_schema(self):
+        def func(foo: Tuple[str, int]) -> Tuple[bool, List]:
+            return True, []
+
+        function_signature: Signature = inspect.signature(func)
+
+        url: str = "/test"
+        result_schema: Schema = AutoMD.parse_parameter_schema(None, function_signature, url, HTTPVerb.get.value)
+
+        assert list(result_schema.fields.keys()) == ["query"]
+        assert result_schema.declared_fields["query"].metadata == {"location": "query", "name": "query"}
+        assert list(result_schema.declared_fields["query"].schema.fields.keys()).sort() == ["foo"].sort()
+        assert isinstance(result_schema.declared_fields["query"].schema.fields["foo"], fields.List)
+        assert isinstance(result_schema.declared_fields["query"].schema.fields["foo"].inner, fields.Raw)
+        assert (result_schema.declared_fields["query"].schema.fields["foo"].metadata["description"]
+                == "Tuple of types (" + ", ".join([str(str), str(int)]) + ")")
+
     ##########################
     # Response Object Checks #
     ##########################
@@ -130,3 +148,16 @@ class TestAutoMD:
         assert list(result_schema.fields.keys()) == ["response"]
         assert isinstance(result_schema.fields["response"], fields.Field)
         assert content_type == "application/json"
+
+    def test_parse_response_dict_type(self):
+        url: str = "/test"
+        result_schema: Schema
+        content_type: str
+        result_schema, content_type = AutoMD.parse_response_schema(TupleResponse,
+                                                                   url,
+                                                                   HTTPVerb.get.value)
+
+        assert list(result_schema.fields.keys()) == ["value"]
+        assert isinstance(result_schema.fields["value"], fields.List)
+        assert result_schema.fields["value"].metadata["description"] == "Tuple response field"
+        assert content_type == "text/plain"

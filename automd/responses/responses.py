@@ -2,7 +2,7 @@ from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
 import typing
-from typing import Union, Dict, List, Any, AnyStr, Text, Type, Optional
+from typing import Union, Dict, List, Any, AnyStr, Text, Type, Tuple
 
 from marshmallow import Schema, fields
 
@@ -87,6 +87,32 @@ class ListResponse(ResponseObjectInterface):
     @staticmethod
     def to_schema() -> Schema:
         return ListResponse.ListResponseSchema()
+
+    @staticmethod
+    def content_type() -> str:
+        return mimetypes.MimeTypes().types_map[1][".txt"]
+
+
+class TupleResponse(ResponseObjectInterface):
+    class TupleResponseSchema(Schema):
+        value = fields.List(fields.Raw(), required=True, description="Tuple response field")
+
+    def __init__(self, value: Tuple):
+        """
+        "Tuple Response"
+        :param value:
+        """
+        super().__init__()
+        self.value: Tuple = value
+
+    def to_dict(self) -> Dict:
+        return {
+            "value": self.value
+        }
+
+    @staticmethod
+    def to_schema() -> Schema:
+        return TupleResponse.TupleResponseSchema()
 
     @staticmethod
     def content_type() -> str:
@@ -254,6 +280,13 @@ response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     getattr(List, "_gorg", "List._gorg"): ListResponse,
     get_type_origin(List): ListResponse,
     "List": ListResponse,
+    tuple: TupleResponse,
+    "tuple": TupleResponse,
+    "Tuple": TupleResponse,
+    Tuple: TupleResponse,
+    get_type_origin(Tuple): TupleResponse,
+    getattr(Tuple, "_name", "Tuple._name"): TupleResponse,
+    getattr(Tuple, "_gorg", "Tuple._gorg"): TupleResponse,
     dict: DictResponse,
     "dict": DictResponse,
     Dict: DictResponse,
@@ -302,6 +335,11 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
     "List": fields.List,
     List: fields.List,
     get_type_origin(List): fields.List,
+    tuple: fields.List,
+    "tuple": fields.List,
+    "Tuple": fields.List,
+    Tuple: fields.List,
+    get_type_origin(Tuple): fields.List,
     Any: fields.Raw,
     "Any": fields.Raw,
     getattr(Any, "_name", "Any._name"): fields.Raw,
@@ -312,8 +350,7 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
 }
 
 
-def map_type_field_mapping(key: Any,
-                           default: Type[fields.Field] = None) -> Type[fields.Field]:
+def map_type_field_mapping(key: Any, default: Type[fields.Field] = None) -> Type[fields.Field]:
     ret_field: Type[fields.Field] = type_field_mapping.get(key)
 
     if ret_field is None:
@@ -329,18 +366,18 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
     field_args: List = []
 
     ret_field: fields.Field
-    if map_type_field_mapping(input_type) == map_type_field_mapping(List):
-        list_inner_type: Type = Any
+    if map_response_object_type(input_type) == map_response_object_type(List):
+        tuple_inner_types: Type = Any
 
         try:
-            list_inner_type = typing.get_args(input_type)[0]
+            tuple_inner_types = typing.get_args(input_type)[0]
         except:
             try:
-                list_inner_type = input_type.__args__[0]
+                tuple_inner_types = input_type.__args__[0]
             except:
                 pass
 
-        inner_field = type_to_field(list_inner_type)
+        inner_field = type_to_field(tuple_inner_types)
         field_args = [inner_field, *field_args]
     elif map_type_field_mapping(input_type) == map_type_field_mapping(Dict):
         dict_key_type: Type = Any
@@ -378,8 +415,22 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
             return type_to_field(key_inner_args[0], **input_kwargs)
         else:
             input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([str(x) for x in key_inner_args])
-    else:
-        pass
+    elif map_response_object_type(input_type) == map_response_object_type(Tuple):
+        any_type: Type = Any
+        tuple_inner_types: List[Type] = []
+
+        try:  # Try Python 3.8 method
+            tuple_inner_types = list(typing.get_args(input_type))
+        except:
+            try:
+                tuple_inner_types = input_type.__args__
+            except:
+                pass
+
+        inner_field = type_to_field(any_type)
+        field_args = [inner_field, *field_args]
+
+        input_kwargs["description"] = f"Tuple of types (" + ", ".join([str(x) for x in tuple_inner_types]) + ")"
 
     return field_class(*field_args, **input_kwargs)
 

@@ -11,7 +11,8 @@ from automd.responses.responses import (map_response_object_type,
                                         FloatResponse,
                                         DictResponse,
                                         ListResponse,
-                                        ValueResponse, map_type_field_mapping, type_to_field, get_type_origin)
+                                        ValueResponse, map_type_field_mapping, type_to_field, get_type_origin,
+                                        TupleResponse)
 
 
 def test_map_response_object_type_str():
@@ -55,6 +56,20 @@ def test_map_response_object_type_list():
     assert map_response_object_type(getattr(typing.List, "_name", "List._name")) == ListResponse
     assert map_response_object_type(getattr(typing.List, "_gorg", "List._gorg")) == ListResponse
     assert map_response_object_type("List") == ListResponse
+
+
+def test_map_response_object_type_tuple():
+    class SomeObject:
+        pass
+
+    assert map_response_object_type("tuple") == TupleResponse
+    assert map_response_object_type(tuple) == TupleResponse
+    assert map_response_object_type(typing.Tuple) == TupleResponse
+    assert map_response_object_type(typing.Tuple[str, int]) == TupleResponse
+    assert map_response_object_type(typing.Tuple[SomeObject, bool]) == TupleResponse
+    assert map_response_object_type(getattr(typing.Tuple, "_name", "Tuple._name")) == TupleResponse
+    assert map_response_object_type(getattr(typing.Tuple, "_gorg", "Tuple._gorg")) == TupleResponse
+    assert map_response_object_type("Tuple") == TupleResponse
 
 
 def test_map_response_object_type_none():
@@ -130,6 +145,19 @@ def test_map_type_field_mapping_any():
     assert map_type_field_mapping(Signature.empty) is fields.Raw
 
 
+def test_map_type_field_mapping_tuple():
+    class SomeObject:
+        pass
+
+    assert map_type_field_mapping("tuple") == fields.List
+    assert map_type_field_mapping(tuple) == fields.List
+    assert map_type_field_mapping(typing.Tuple) == fields.List
+    assert map_type_field_mapping(typing.Tuple[str, bool]) == fields.List
+    assert map_type_field_mapping(typing.Tuple[SomeObject, int]) == fields.List
+    assert map_type_field_mapping(get_type_origin(typing.Tuple)) == fields.List
+    assert map_type_field_mapping("Tuple") == fields.List
+
+
 class TestResponsesTypeToField:
     def test_any(self):
         field: fields.Field = type_to_field(typing.Any)
@@ -179,6 +207,14 @@ class TestResponsesTypeToField:
         assert type(field) == fields.List
         assert type(field.inner) == fields.List
         assert type(field.inner.inner) == fields.Raw
+
+    def test_tuple_complex(self):
+        field: fields.Field = type_to_field(typing.Tuple[str, int])
+
+        assert isinstance(field, fields.List)
+        assert isinstance(field.inner, fields.Raw)
+        assert (field.metadata["description"]
+                == f"Tuple of types (" + ", ".join([str(str), str(int)]) + ")")
 
     def test_dict(self):
         field: fields.Field = type_to_field(Dict)

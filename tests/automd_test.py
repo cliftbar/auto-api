@@ -81,7 +81,7 @@ class TestAutoMD:
         assert isinstance(result_schema.fields["query"].schema.fields["baz"], fields.List)
         assert isinstance(result_schema.fields["query"].schema.fields["baz"].inner, fields.String)
 
-    def test_parse_parameter_schema(self):
+    def test_parse_parameter_schema_tuples(self):
         def func(foo: Tuple[str, int]) -> Tuple[bool, List]:
             return True, []
 

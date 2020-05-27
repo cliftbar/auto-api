@@ -9,13 +9,14 @@ This library requires minimal changes to existing code, and most information (es
 doesn't rely on keeping docstrings up to date.
 
 ## Installation
-AutoMD is available through PyPi.  AutoMD requires Python >= 3.6 (f-strings are too convenient to ignore)
+AutoMD is available through [PyPi](https://pypi.org/project/AutoMD/).  AutoMD requires Python >= 3.6
+
 Install using pip:
 ```
 pip install automd
 ```
 
-AutoMD also install the following dependencies:
+AutoMD also installs the following dependencies:
 - flask
 - flask-restful
 - webargs
@@ -114,10 +115,22 @@ class Status(Resource):
         return ValueResponse(log_text)
 ```
 
-With this information, argument types, return types, summaries, descriptions, detailed default
+With this information argument types, return types, summaries, descriptions, detailed default
 information, and parameter location info (body, query, etc) is included.  Summary and description
 are the only "magic strings" needed, and those will generally not change much or be onerous to
 keep up to date compared to the automatically grabbed information.
+
+There is also no need to use FlaskRestful to register routes, flask routes can be registered directly
+
+```python
+@automd(summary="flask route", description="example of a route defined using Flasks '@app.route' decorator")
+@app.route("/flask/status", methods=["GET", "POST"])
+def flask_status() -> str:
+    return "OK"
+```
+
+Also, setting the `always_document` flag of the AutoMDApp class to `true` will cause AutoMD to inspect all
+routes in the flask app, as if they were decorated with `@automd()` (without arugments).
 
 An example Flask API app is provided to showcase some functionality.  Start it using `run.py`.
 A sample of the OpenAPI spec generated is [here](https://cliftbar.github.io/automd/documentation/sample_spec.html).

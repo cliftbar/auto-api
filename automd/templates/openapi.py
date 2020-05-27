@@ -14,7 +14,7 @@ import sys
 
 from typing import Dict
 
-OPENAPI_TEMPLATE_old: str = """
+SWAGGER_UI_TEMPLATE_old: str = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -68,7 +68,7 @@ window.onload = function() {
 </body>
 </html>
 """
-OPENAPI_TEMPLATE: str = """
+SWAGGER_UI_TEMPLATE: str = """
 <!-- HTML for static distribution bundle build -->
 <!DOCTYPE html>
 <html lang="en">
@@ -131,6 +131,41 @@ OPENAPI_TEMPLATE: str = """
   </body>
 </html>
 """
+REDOC_TEMPLATE: str = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ReDoc</title>
+    <!-- needed for adaptive design -->
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+
+    <!--
+    ReDoc doesn't change outer page styles
+    -->
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id='redoc-container'></div>
+    <script>
+      window.onload = function() {
+        var spec = %s;
+        Redoc.init(spec,
+                   {},
+                   document.getElementById('redoc-container')
+        )
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"> </script>
+  </body>
+</html>
+"""
 
 
 def generate_template_from_yaml(spec_yaml: str) -> str:
@@ -149,7 +184,7 @@ def generate_template_from_dict(spec_dict: Dict) -> str:
         :param spec_dict:
         :return:
         """
-    return OPENAPI_TEMPLATE % json.dumps(spec_dict)
+    return REDOC_TEMPLATE % json.dumps(spec_dict)
 
 
 def main():

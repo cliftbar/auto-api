@@ -10,7 +10,7 @@ def test_automd_decorator_inputs():
     @automd(parameter_schema={"key", "value"},
             summary="test_summary",
             description="test_description",
-            tags=[{"key": "value"}, {"key_2": "value_2"}])
+            tags=["value", "value_2"])
     def func():
         pass
 
@@ -21,7 +21,7 @@ def test_automd_decorator_inputs():
     assert automd_params["parameter_schema"] == {"key", "value"}
     assert automd_params["summary"] == "test_summary"
     assert automd_params["description"] == "test_description"
-    assert automd_params["tags"] == [{"key": "value"}, {"key_2": "value_2"}]
+    assert automd_params["tags"] == ["value", "value_2"]
 
 
 def test_automd_decorator_inspections():

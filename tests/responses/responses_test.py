@@ -5,6 +5,7 @@ from inspect import Signature
 
 from marshmallow import fields
 
+from automd.mixedfield import MixedField
 from automd.responses.responses import (map_response_object_type,
                                         StringResponse,
                                         IntegerResponse,
@@ -192,8 +193,8 @@ class TestResponsesTypeToField:
     def test_union_basic(self):
         field: fields.Field = type_to_field(typing.Union[str, int])
 
-        assert isinstance(field, fields.Raw)
-        assert field.metadata["description"] == "Multiple Types Allowed: <class 'str'>, <class 'int'>"
+        assert isinstance(field, MixedField)
+        assert field.metadata["description"] == f"Multiple Types Allowed: {str.__name__}, {int.__name__}"
 
     def test_list(self):
         field: fields.Field = type_to_field(typing.List)
@@ -244,11 +245,11 @@ class TestResponsesTypeToField:
     def test_union(self):
         field: fields.Field = type_to_field(typing.Union[int, str])
 
-        assert isinstance(field, fields.Raw)
-        assert field.metadata["description"] == "Multiple Types Allowed: <class 'int'>, <class 'str'>"
+        assert isinstance(field, MixedField)
+        assert field.metadata["description"] == f"Multiple Types Allowed: {int.__name__}, {str.__name__}"
 
     def test_union_complex(self):
         field: fields.Field = type_to_field(typing.Union[typing.List[str], Dict[str, bool]])
 
-        assert isinstance(field, fields.Raw)
+        assert isinstance(field, MixedField)
         assert field.metadata["description"] == "Multiple Types Allowed: typing.List[str], typing.Dict[str, bool]"

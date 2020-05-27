@@ -6,6 +6,8 @@ from typing import Union, Dict, List, Any, AnyStr, Text, Type, Tuple
 
 from marshmallow import Schema, fields
 
+from automd.mixedfield import MixedField
+
 
 class ResponseObjectInterface(ABC):
     """
@@ -269,10 +271,13 @@ def get_type_origin(key: Type) -> Type:
 response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     int: IntegerResponse,
     "int": IntegerResponse,
+    IntegerResponse: IntegerResponse,
     float: FloatResponse,
     "float": FloatResponse,
+    FloatResponse: FloatResponse,
     str: StringResponse,
     "str": StringResponse,
+    StringResponse: StringResponse,
     list: ListResponse,
     "list": ListResponse,
     List: ListResponse,
@@ -280,6 +285,7 @@ response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     getattr(List, "_gorg", "List._gorg"): ListResponse,
     get_type_origin(List): ListResponse,
     "List": ListResponse,
+    ListResponse: ListResponse,
     tuple: TupleResponse,
     "tuple": TupleResponse,
     "Tuple": TupleResponse,
@@ -287,6 +293,7 @@ response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     get_type_origin(Tuple): TupleResponse,
     getattr(Tuple, "_name", "Tuple._name"): TupleResponse,
     getattr(Tuple, "_gorg", "Tuple._gorg"): TupleResponse,
+    TupleResponse: TupleResponse,
     dict: DictResponse,
     "dict": DictResponse,
     Dict: DictResponse,
@@ -294,11 +301,13 @@ response_object_type_map: Dict[Any, Type[ResponseObjectInterface]] = {
     getattr(Dict, "_gorg", "Dict._gorg"): DictResponse,
     get_type_origin(Dict): DictResponse,
     "Dict": DictResponse,
+    DictResponse: DictResponse,
     Signature.empty: None,
     Any: ValueResponse,
     getattr(Any, "_name", "Any._name"): ValueResponse,
     getattr(Any, "_gorg", "Any._gorg"): ValueResponse,
-    "Any": ValueResponse
+    "Any": ValueResponse,
+    ValueResponse: ValueResponse
 }
 
 
@@ -345,7 +354,7 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
     getattr(Any, "_name", "Any._name"): fields.Raw,
     getattr(Any, "_gorg", "Any._gorg"): fields.Raw,
     Signature.empty: fields.Raw,
-    get_type_origin(Union): fields.Raw,
+    get_type_origin(Union): MixedField,
     None: None
 }
 
@@ -414,7 +423,9 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         if len(key_inner_args) == 1:
             return type_to_field(key_inner_args[0], **input_kwargs)
         else:
-            input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([str(x) for x in key_inner_args])
+            inner_fields: List[fields.Field] = [type_to_field(x, **input_kwargs) for x in key_inner_args]
+            field_args = [inner_fields, *field_args]
+            input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([getattr(x, "__name__", str(x)) for x in key_inner_args])
     elif map_response_object_type(input_type) == map_response_object_type(Tuple):
         any_type: Type = Any
         tuple_inner_types: List[Type] = []

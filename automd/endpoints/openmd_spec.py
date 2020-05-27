@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class OpenAPISpecJSON(Resource):
     @automd(summary="OpenAPI JSON Documentation Endpoint",
             description="Returns the OpenAPI Spec in JSON format",
-            tags=[{"name": "AutoMD"}])
+            tags=["AutoMD"])
     def get(self) -> Dict:
         auto_app: AutoMD = current_app.config[AutoMDKeys.config.value].auto_md
 
@@ -30,7 +30,7 @@ class OpenAPISpecJSON(Resource):
 class OpenAPISpecYAML(Resource):
     @automd(summary="OpenAPI Yaml Documentation Endpoint",
             description="Returns the OpenAPI Spec in Yaml format",
-            tags=[{"name": "AutoMD"}])
+            tags=["AutoMD"])
     def get(self) -> str:
         auto_app: AutoMD = current_app.config[AutoMDKeys.config.value].auto_md
 

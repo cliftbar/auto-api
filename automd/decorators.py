@@ -9,7 +9,7 @@ from automd.responses.responses import map_response_object_type
 def automd(parameter_schema: Dict = None,
            summary: str = None,
            description: str = None,
-           tags: List[Dict] = None) -> Callable:
+           tags: List[str] = None) -> Callable:
     """
     Decorator to perform documentation introspection on a FlaskRESTful Resource Class.
     :param parameter_schema: same as get passed into use_kwargs

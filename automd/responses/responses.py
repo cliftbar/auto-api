@@ -384,7 +384,7 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         except (AttributeError, IndexError):
             try:
                 list_inner_types = input_type.__args__[0]
-            except (AttributeError, IndexError):
+            except (AttributeError, IndexError, TypeError):
                 pass
 
         inner_field = type_to_field(list_inner_types)
@@ -400,7 +400,7 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
             try:  # Then try Python 3.6/3.7
                 dict_key_type = input_type.__args__[0]
                 dict_value_type = input_type.__args__[1]
-            except (AttributeError, IndexError):
+            except (AttributeError, IndexError, TypeError):
                 pass
 
         key_field = type_to_field(dict_key_type)

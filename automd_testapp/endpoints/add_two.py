@@ -15,7 +15,7 @@ class AddTwo(Resource):
     @automd(parameter_schema=get_arguments,
             summary='Add Endpoint',
             description='Returns the sum of two numbers.  Takes arguments in Query Parameters',
-            tags=[{"name": "Math"}])
+            tags=["Math"])
     def get(self, first_number: float, second_number: float) -> float:
         return first_number + second_number
 
@@ -29,8 +29,8 @@ class MultiplyTwo(Resource):
     @automd(parameter_schema=get_arguments,
             summary='Multiply Endpoint',
             description='Multiplies two numbers and returns the result.  Takes arguments in JSON',
-            tags=[{"name": "Math"}])
+            tags=["Math"])
     # TODO: Get accurate location, may have to implement our own use_kwargs
     @use_kwargs(get_arguments, location="json")
-    def get(self, first_number: float, second_number: float) -> float:
+    def post(self, first_number: float, second_number: float) -> float:
         return first_number * second_number

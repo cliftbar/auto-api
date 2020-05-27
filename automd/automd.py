@@ -1,6 +1,5 @@
 import mimetypes
 
-
 from http.client import responses
 from inspect import Signature
 from typing import Dict, Union, List, Callable, Type, Tuple
@@ -15,6 +14,7 @@ from werkzeug.routing import Rule, BuildError
 from automd.decorators import automd
 from automd.http_verbs import HTTPVerb
 from automd.keys import AutoMDKeys
+from automd.mixedfield import mixedfield_2properties
 from automd.responses import ResponseObjectInterface
 from automd.responses.responses import map_type_field_mapping, type_to_field
 
@@ -40,15 +40,15 @@ class AutoMD:
         :param documented_verbs: Tuple of what HTTP Verbs to document.  Defaults to GET, POST, PUT, DELETE, PATCH
         """
         self.always_document: bool = always_document
-        self.default_tag: Dict = {"name": default_tag or title}
+        self.default_tag: str = default_tag or title
         self.documented_verbs: Tuple[HTTPVerb] = documented_verbs
-
+        self._ma_plugin: MarshmallowPlugin = MarshmallowPlugin()
         self.apispec_options: Dict = {
             "title": title,
             "app_version": app_version,
             "openapi_version": openapi_version,
             "info": {} if info is None else info,
-            "plugins": [MarshmallowPlugin()]
+            "plugins": [self._ma_plugin]
         }
 
     def start_spec(self) -> APISpec:
@@ -62,13 +62,17 @@ class AutoMD:
                                     info=self.apispec_options["info"],
                                     plugins=self.apispec_options["plugins"])
 
+        # register the Mixed Field handling function
+        self._ma_plugin.converter.add_attribute_function(mixedfield_2properties)
+
         return api_spec
 
     @staticmethod
     def parse_parameter_schema(parameter_object: Union[Dict, Schema],
                                func_signature: Signature,
                                path_url: str,
-                               http_verb: str) -> Schema:
+                               http_verb: str) -> Dict[str, Dict[str, fields.Field]]:
+        # No marhmallow parameters, infer from function signature
         if parameter_object is None:
             parameter_signature_dict = {}
             for name, param in func_signature.parameters.items():
@@ -92,6 +96,8 @@ class AutoMD:
                 parameter_signature_dict[name] = field
             parameter_object = parameter_signature_dict
 
+        # dump schema fields
+        # TODO: this is probably a not a good way to handle this
         if hasattr(parameter_object, "fields"):
             parameter_dict: Dict[str, fields.Field] = parameter_object.fields
         else:
@@ -105,24 +111,24 @@ class AutoMD:
 
             location_argmaps[location][name] = field
 
-        location_schemas: Dict[str, Union[Dict[str, Schema], type]] = {}
-        for loc, argmap in location_argmaps.items():
-            if loc not in location_schemas:
-                location_schemas[loc] = {}
-            # TODO: Source a better Schema Name
-            url_name: str = "".join([part.title() for part in path_url.split("/")])
-            schema_name: str = f"{url_name}{http_verb.title()}{loc.title()}Schema"
-            location_schemas[loc] = Schema.from_dict(argmap, name=schema_name)
+        # TODO: clean up this code once I'm sure of not needing it
+        # location_schemas: Dict[str, Union[Dict[str, Schema], type]] = {}
+        # for loc, argmap in location_argmaps.items():
+        #     if loc not in location_schemas:
+        #         location_schemas[loc] = {}
+        #     # TODO: Source a better Schema Name
+        #     url_name: str = "".join([part.title() for part in path_url.split("/")])
+        #     schema_name: str = f"{url_name}{http_verb.title()}{loc.title()}Schema"
+        #     location_schemas[loc] = Schema.from_dict(argmap, name=schema_name)
+        # class ParameterSchema(Schema):
+        #     class Meta:
+        #         include = {
+        #             loc: fields.Nested(schema, location=loc, name=loc)
+        #             for loc, schema
+        #             in location_schemas.items()
+        #         }
 
-        class ParameterSchema(Schema):
-            class Meta:
-                include = {
-                    loc: fields.Nested(schema, location=loc, name=loc)
-                    for loc, schema
-                    in location_schemas.items()
-                }
-
-        return ParameterSchema()
+        return location_argmaps
 
     # TODO: nicer return than tuple
     @staticmethod
@@ -136,12 +142,13 @@ class AutoMD:
         :param http_verb:
         :return: Response Schema, content-type
         """
-        response_schema: Union[Schema, type]
+        response_schema: Schema
         if response_interface is not None:
             response_schema = response_interface.to_schema()
         else:
             url_name: str = "".join([part.title() for part in path_url.split("/")])
-            response_schema = Schema.from_dict({}, name=f"{url_name}{http_verb.title()}ResponseSchema")
+            # TODO: test this code path
+            response_schema = Schema.from_dict({}, name=f"{url_name}{http_verb.title()}ResponseSchema")()
 
         content_type: str
         try:
@@ -161,7 +168,7 @@ class AutoMD:
                       parameter_object: Union[Dict, Schema] = None,
                       response_object: Union[Type, ResponseObjectInterface] = None,
                       func_signature: Signature = None,
-                      tags: List[Dict] = None) -> APISpec:
+                      tags: List[str] = None) -> APISpec:
         """
         Register a new path to the provided APISpec object (passed in APISpec object is mutated).
         :param api_spec: APISpec to register the path to
@@ -174,31 +181,51 @@ class AutoMD:
         :param response_object: HTTP response information
         :param func_signature: inspection Signature object of the API call function
         :param tags: Tags for categorizing the path.  Defaults to the AutoMD App Title
-        :return: The same APISpec object passed in, but now with a new path register
+        :return: The same APISpec object passed in, but now with a new path registered
         """
 
-        parameter_schema: Schema = self.parse_parameter_schema(parameter_object, func_signature, path_url, http_verb)
+        parameter_schema: Dict = self.parse_parameter_schema(parameter_object, func_signature, path_url, http_verb)
 
         response_schema, content_type = self.parse_response_schema(response_object, path_url, http_verb)
 
-        operations: Dict = {
-            http_verb.lower(): {
-                "responses": {
-                    str(response_code): {
-                        "description": responses[response_code],
-                        "content": {
-                            content_type: {
-                                "schema": response_schema
-                            }
+        summary = summary or path_url
+
+        verb_dict: Dict = {
+            "responses": {
+                str(response_code): {
+                    "description": responses[response_code],
+                    "content": {
+                        content_type: {
+                            "schema": response_schema
                         }
                     }
-                },
-                "parameters": [{"in": "query", "name": "test", "schema": parameter_schema}],
-                "summary": summary,
-                "description": description,
-                "tags": tags or [self.default_tag]
-            }
+                }
+            },
+            "summary": summary,
+            "tags": tags or [self.default_tag]
         }
+
+        if description is not None:
+            verb_dict["description"] = description
+
+        resp_params = self._ma_plugin.converter.fields2parameters((parameter_schema or {}).get("query", {}),
+                                                                  default_in="query")
+
+        verb_dict["parameters"] = resp_params
+        if parameter_schema:
+            req_body = self._ma_plugin.converter.fields2parameters((parameter_schema or {}).get("json", {}),
+                                                                   default_in="body")
+
+            if len(req_body) > 0:
+                verb_dict["requestBody"] = {
+                    "content": {
+                        "application/json": {
+                            "schema": req_body[0]["schema"]
+                        }
+                    }
+                }
+
+        operations: Dict = {http_verb.lower(): verb_dict}
 
         api_spec.path(
             path=path_url,
@@ -253,7 +280,7 @@ class AutoMD:
                     func_signature: Signature = automd_spec_parameters.get("func_signature")
                     summary: str = automd_spec_parameters.get("summary")
                     description: str = automd_spec_parameters.get("description")
-                    tags: List[Dict] = automd_spec_parameters.get("tags")
+                    tags: List[str] = automd_spec_parameters.get("tags")
 
                     for response_code, response in response_schemas.items():
                         self.register_path(automd_spec,
@@ -288,7 +315,7 @@ class AutoMD:
                 func_signature: Signature = automd_spec_parameters.get("func_signature")
                 summary: str = automd_spec_parameters.get("summary")
                 description: str = automd_spec_parameters.get("description")
-                tags: List[Dict] = automd_spec_parameters.get("tags")
+                tags: List[str] = automd_spec_parameters.get("tags")
 
                 for response_code, response in response_schemas.items():
                     self.register_path(automd_spec,

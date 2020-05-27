@@ -5,6 +5,7 @@ from inspect import Signature
 
 from marshmallow import fields
 
+from automd.mixedfield import MixedField
 from automd.responses.responses import (map_response_object_type,
                                         StringResponse,
                                         IntegerResponse,
@@ -192,8 +193,8 @@ class TestResponsesTypeToField:
     def test_union_basic(self):
         field: fields.Field = type_to_field(typing.Union[str, int])
 
-        assert isinstance(field, fields.Raw)
-        assert field.metadata["description"] == "Multiple Types Allowed: <class 'str'>, <class 'int'>"
+        assert isinstance(field, MixedField)
+        assert field.metadata["description"] == f"Multiple Types Allowed: {str.__name__}, {int.__name__}"
 
     def test_list(self):
         field: fields.Field = type_to_field(typing.List)
@@ -204,7 +205,7 @@ class TestResponsesTypeToField:
     def test_list_complex(self):
         field: fields.Field = type_to_field(List[List])
 
-        assert type(field) == fields.List
+        assert isinstance(field, fields.List)
         assert type(field.inner) == fields.List
         assert type(field.inner.inner) == fields.Raw
 
@@ -213,8 +214,10 @@ class TestResponsesTypeToField:
 
         assert isinstance(field, fields.List)
         assert isinstance(field.inner, fields.Raw)
-        assert (field.metadata["description"]
-                == f"Tuple of types (" + ", ".join([str(str), str(int)]) + ")")
+
+        string_compare = getattr(str, "__name__", str(str))
+        int_compare = getattr(int, "__name__", str(int))
+        assert field.metadata["description"] == f"Tuple of types ({string_compare}, {int_compare})"
 
     def test_dict(self):
         field: fields.Field = type_to_field(Dict)
@@ -244,11 +247,13 @@ class TestResponsesTypeToField:
     def test_union(self):
         field: fields.Field = type_to_field(typing.Union[int, str])
 
-        assert isinstance(field, fields.Raw)
-        assert field.metadata["description"] == "Multiple Types Allowed: <class 'int'>, <class 'str'>"
+        assert isinstance(field, MixedField)
+        assert field.metadata["description"] == f"Multiple Types Allowed: {int.__name__}, {str.__name__}"
 
     def test_union_complex(self):
         field: fields.Field = type_to_field(typing.Union[typing.List[str], Dict[str, bool]])
 
-        assert isinstance(field, fields.Raw)
-        assert field.metadata["description"] == "Multiple Types Allowed: typing.List[str], typing.Dict[str, bool]"
+        assert isinstance(field, MixedField)
+        list_compare = getattr(List[str], "__name__", str(List[str]))
+        dict_compare = getattr(Dict[str, bool], "__name__", str(Dict[str, bool]))
+        assert field.metadata["description"] == f"Multiple Types Allowed: {list_compare}, {dict_compare}"

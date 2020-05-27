@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Tuple
 
 from flask_restful import Resource
 from webargs import fields
@@ -6,6 +6,7 @@ from webargs.flaskparser import use_kwargs
 
 from automd.decorators import automd, disable_automd
 from automd.responses import ValueResponse, JSONResponse
+from automd.responses.responses import TupleResponse
 
 
 class Status(Resource):
@@ -88,8 +89,10 @@ class IntrospectionStatus(Resource):
              text: str = "Hello AutoMD",
              complex_list: List[str] = None,
              complex_list_list: List[List[str]] = None,
+             a_tuple: Tuple = None,
+             tuple_complex: Tuple[str, int] = None,
              complex_dict: Dict[str, Any] = None,
-             optional_bool: Optional[bool] = None) -> str:
+             optional_bool: Optional[bool] = None) -> TupleResponse:
         ret_text: str = "status check OK"
 
         if text is not None:

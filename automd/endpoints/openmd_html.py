@@ -10,9 +10,9 @@ from automd.keys import AutoMDKeys
 from automd.templates.openapi import generate_template_from_dict
 
 
-class OpenMDHTML(Resource):
-    @automd(summary='OpenAPI HTML Documentation Endpoint',
-            description='Returns the OpenAPI HTML',
+class AutoMDHTML(Resource):
+    @automd(summary="OpenAPI HTML Documentation Endpoint",
+            description="Returns the OpenAPI HTML",
             tags=["AutoMD"])
     def get(self) -> str:
         auto_app: AutoMD = current_app.config[AutoMDKeys.config.value].auto_md
@@ -21,19 +21,4 @@ class OpenMDHTML(Resource):
 
         ret: Dict = automd_spec.to_dict()
 
-        return FlaskResponse(generate_template_from_dict(ret), mimetype='text/html')
-
-
-class AutoMDHTML:
-    @staticmethod
-    @automd(summary='OpenAPI HTML Documentation Endpoint',
-            description='Returns the OpenAPI HTML',
-            tags=["AutoMD"])
-    def get() -> str:
-        auto_app: AutoMD = current_app.config[AutoMDKeys.config.value].auto_md
-
-        automd_spec: APISpec = auto_app.application_to_apispec(current_app)
-
-        ret: Dict = automd_spec.to_dict()
-
-        return FlaskResponse(generate_template_from_dict(ret), mimetype='text/html')
+        return FlaskResponse(generate_template_from_dict(ret), mimetype="text/html")

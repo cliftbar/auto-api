@@ -29,6 +29,7 @@ class ResponseObjectInterface(ABC):
 
 
 class ValueResponse(ResponseObjectInterface):
+    # TODO: is this enough freedom?
     class ValueResponseSchema(Schema):
         value = fields.Field(required=True,
                              validate=(lambda x: type(x) in [int, float, str, bool, dict, list]),
@@ -259,7 +260,7 @@ def get_type_origin(key: Type) -> Type:
     origin: Type
     try:
         origin = typing.get_origin(key)
-    except:
+    except AttributeError:
         origin = getattr(key, "__origin__", None)
 
     if origin is None:
@@ -376,17 +377,17 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
 
     ret_field: fields.Field
     if map_response_object_type(input_type) == map_response_object_type(List):
-        tuple_inner_types: Type = Any
+        list_inner_types: Type = Any
 
         try:
-            tuple_inner_types = typing.get_args(input_type)[0]
-        except:
+            list_inner_types = typing.get_args(input_type)[0]
+        except (AttributeError, IndexError):
             try:
-                tuple_inner_types = input_type.__args__[0]
-            except:
+                list_inner_types = input_type.__args__[0]
+            except (AttributeError, IndexError):
                 pass
 
-        inner_field = type_to_field(tuple_inner_types)
+        inner_field = type_to_field(list_inner_types)
         field_args = [inner_field, *field_args]
     elif map_type_field_mapping(input_type) == map_type_field_mapping(Dict):
         dict_key_type: Type = Any
@@ -395,11 +396,11 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         try:  # Try Python 3.8 method
             dict_key_type = typing.get_args(input_type)[0]
             dict_value_type = typing.get_args(input_type)[1]
-        except:
+        except (AttributeError, IndexError):
             try:  # Then try Python 3.6/3.7
                 dict_key_type = input_type.__args__[0]
                 dict_value_type = input_type.__args__[1]
-            except:
+            except (AttributeError, IndexError):
                 pass
 
         key_field = type_to_field(dict_key_type)
@@ -410,10 +411,10 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         key_inner_args: List[Type] = []
         try:  # Try Python 3.8 method
             key_inner_args = list(typing.get_args(input_type))
-        except:
+        except AttributeError:
             try:  # Then try Python 3.6/3.7
                 key_inner_args = input_type.__args__
-            except:
+            except AttributeError:
                 pass
 
         if type(None) in key_inner_args:
@@ -425,23 +426,24 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         else:
             inner_fields: List[fields.Field] = [type_to_field(x, **input_kwargs) for x in key_inner_args]
             field_args = [inner_fields, *field_args]
-            input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join([getattr(x, "__name__", str(x)) for x in key_inner_args])
+            key_inner_names: List[str] = [getattr(x, "__name__", str(x)) for x in key_inner_args]
+            input_kwargs["description"] = f"Multiple Types Allowed: " + ", ".join(key_inner_names)
     elif map_response_object_type(input_type) == map_response_object_type(Tuple):
         any_type: Type = Any
         tuple_inner_types: List[Type] = []
 
         try:  # Try Python 3.8 method
             tuple_inner_types = list(typing.get_args(input_type))
-        except:
+        except AttributeError:
             try:
                 tuple_inner_types = input_type.__args__
-            except:
+            except AttributeError:
                 pass
 
         inner_field = type_to_field(any_type)
         field_args = [inner_field, *field_args]
 
-        input_kwargs["description"] = f"Tuple of types (" + ", ".join([str(x) for x in tuple_inner_types]) + ")"
+        tuple_inner_names: List[str] = [getattr(x, "__name__", str(x)) for x in tuple_inner_types]
+        input_kwargs["description"] = f"Tuple of types ({' '.join(tuple_inner_names)}"
 
     return field_class(*field_args, **input_kwargs)
-

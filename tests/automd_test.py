@@ -89,8 +89,11 @@ class TestAutoMD:
         assert list(result_schema.keys()) == ["query"]
         assert isinstance(result_schema["query"]["foo"], fields.List)
         assert isinstance(result_schema["query"]["foo"].inner, fields.Raw)
+
+        string_compare = getattr(str, "__name__", str(str))
+        int_compare = getattr(int, "__name__", str(int))
         assert (result_schema["query"]["foo"].metadata["description"]
-                == "Tuple of types (" + ", ".join([str(str), str(int)]) + ")")
+                == f"Tuple of types ({string_compare}, {int_compare})")
 
     ##########################
     # Response Object Checks #

@@ -1,5 +1,3 @@
-import logging
-
 from typing import Dict
 
 from apispec import APISpec
@@ -9,8 +7,6 @@ from flask_restful import Resource
 from automd.decorators import automd
 from automd.automd import AutoMD
 from automd.keys import AutoMDKeys
-
-logger = logging.getLogger(__name__)
 
 
 class OpenAPISpecJSON(Resource):

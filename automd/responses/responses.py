@@ -444,6 +444,6 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         field_args = [inner_field, *field_args]
 
         tuple_inner_names: List[str] = [getattr(x, "__name__", str(x)) for x in tuple_inner_types]
-        input_kwargs["description"] = f"Tuple of types ({' '.join(tuple_inner_names)}"
+        input_kwargs["description"] = f"Tuple of types ({', '.join(tuple_inner_names)})"
 
     return field_class(*field_args, **input_kwargs)

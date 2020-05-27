@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 from flask_restful import Api
 
 from automd.automd import AutoMD
 from automd.encoder import AutoMDObjEncoder
-from automd.endpoints.openmd_html import OpenMDHTML
+from automd.endpoints.openmd_html import AutoMDHTML
 from automd.endpoints.openmd_spec import OpenAPISpecJSON, OpenAPISpecYAML
 from automd.http_verbs import HTTPVerb
 from automd.keys import AutoMDKeys
@@ -14,7 +14,7 @@ from automd.keys import AutoMDKeys
 class AutoMDSpecRoute(Enum):
     html = "html"
     json = "json"
-    yml = "yml"
+    yml = "yaml"
     yaml = "yaml"
 
 
@@ -23,13 +23,12 @@ class AutoMDApp:
             self,
             app_api: Api,
             title: str,
-            app_version: str = "1.0.0",
+            app_version: str = "0.0.1",
             openapi_version: str = "3.0.0",
             info: Dict = None,
             default_tag: str = None,
             path_override: str = None,
-            spec_routes: Tuple = (AutoMDSpecRoute.html, AutoMDSpecRoute.yaml,
-                                  AutoMDSpecRoute.json, AutoMDSpecRoute.yml),
+            spec_routes: Tuple = (AutoMDSpecRoute.html, AutoMDSpecRoute.yaml, AutoMDSpecRoute.json),
             always_document: bool = False,
             documented_verbs: Tuple = (HTTPVerb.get, HTTPVerb.post, HTTPVerb.put, HTTPVerb.delete, HTTPVerb.patch)
     ):
@@ -73,4 +72,4 @@ class AutoMDApp:
         if AutoMDSpecRoute.yaml in spec_routes or AutoMDSpecRoute.yml in spec_routes:
             app_api.add_resource(OpenAPISpecYAML, f"{url}/spec/yaml", endpoint=f"OpenAPISpecYAML_{endpoint_prefix}")
         if AutoMDSpecRoute.html in spec_routes:
-            app_api.add_resource(OpenMDHTML, f"{url}/html", endpoint=f"OpenAPIHTML_{endpoint_prefix}")
+            app_api.add_resource(AutoMDHTML, f"{url}/html", endpoint=f"OpenAPIHTML_{endpoint_prefix}")

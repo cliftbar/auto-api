@@ -2,7 +2,7 @@ from inspect import Signature
 import mimetypes
 from abc import ABC, abstractmethod
 import typing
-from typing import Union, Dict, List, Any, AnyStr, Text, Type, Optional
+from typing import Union, Dict, List, Any, AnyStr, Text, Type
 
 from marshmallow import Schema, fields
 
@@ -227,11 +227,11 @@ class FloatResponse(ResponseObjectInterface):
         return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
-def get_type_origin(key: Type) -> Type:
+def get_type_origin(key: Union[Type, type(Union)]) -> Type:
     origin: Type
     try:
         origin = typing.get_origin(key)
-    except:
+    except Exception:
         origin = getattr(key, "__origin__", None)
 
     if origin is None:
@@ -334,10 +334,10 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
 
         try:
             list_inner_type = typing.get_args(input_type)[0]
-        except:
+        except Exception:
             try:
                 list_inner_type = input_type.__args__[0]
-            except:
+            except Exception:
                 pass
 
         inner_field = type_to_field(list_inner_type)
@@ -349,11 +349,11 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         try:  # Try Python 3.8 method
             dict_key_type = typing.get_args(input_type)[0]
             dict_value_type = typing.get_args(input_type)[1]
-        except:
+        except Exception:
             try:  # Then try Python 3.6/3.7
                 dict_key_type = input_type.__args__[0]
                 dict_value_type = input_type.__args__[1]
-            except:
+            except Exception:
                 pass
 
         key_field = type_to_field(dict_key_type)
@@ -364,10 +364,10 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         key_inner_args: List[Type] = []
         try:  # Try Python 3.8 method
             key_inner_args = list(typing.get_args(input_type))
-        except:
+        except Exception:
             try:  # Then try Python 3.6/3.7
                 key_inner_args = input_type.__args__
-            except:
+            except Exception:
                 pass
 
         if type(None) in key_inner_args:
@@ -382,4 +382,3 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         pass
 
     return field_class(*field_args, **input_kwargs)
-

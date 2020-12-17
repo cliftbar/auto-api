@@ -241,31 +241,7 @@ class AutoMD:
                     continue
                 value_func: Callable = view
 
-                if (self.always_document
-                        and not hasattr(value_func, AutoMDKeys.function.value)
-                        and not hasattr(value_func, AutoMDKeys.hide_function.value)):
-                    value_func = automd()(value_func)
-
-                if hasattr(value_func, AutoMDKeys.function.value):
-                    automd_spec_parameters: Dict = getattr(value_func, AutoMDKeys.function.value)
-                    response_schemas: Dict = automd_spec_parameters.get("response_schemas")
-                    parameter_schema: Dict = automd_spec_parameters.get("parameter_schema")
-                    func_signature: Signature = automd_spec_parameters.get("func_signature")
-                    summary: str = automd_spec_parameters.get("summary")
-                    description: str = automd_spec_parameters.get("description")
-                    tags: List[Dict] = automd_spec_parameters.get("tags")
-
-                    for response_code, response in response_schemas.items():
-                        self.register_path(automd_spec,
-                                           key,
-                                           method,
-                                           response_code,
-                                           summary,
-                                           description,
-                                           parameter_schema,
-                                           response,
-                                           func_signature,
-                                           tags)
+                self.register_function(automd_spec, method, key, value_func)
 
     def parse_flask_restful(self, automd_spec: APISpec, view):
         method: str
@@ -276,28 +252,31 @@ class AutoMD:
 
             value_func: Callable = getattr(view.view_class, method.lower())
 
-            if (self.always_document
-                    and not hasattr(value_func, AutoMDKeys.function.value)
-                    and not hasattr(value_func, AutoMDKeys.hide_function.value)):
-                value_func = automd()(value_func)
+            self.register_function(automd_spec, method, key, value_func)
 
-            if hasattr(value_func, AutoMDKeys.function.value):
-                automd_spec_parameters: Dict = getattr(value_func, AutoMDKeys.function.value)
-                response_schemas: Dict = automd_spec_parameters.get("response_schemas")
-                parameter_schema: Dict = automd_spec_parameters.get("parameter_schema")
-                func_signature: Signature = automd_spec_parameters.get("func_signature")
-                summary: str = automd_spec_parameters.get("summary")
-                description: str = automd_spec_parameters.get("description")
-                tags: List[Dict] = automd_spec_parameters.get("tags")
+    def register_function(self, automd_spec: APISpec, method: str, key: str, value_func: Callable):
+        if (self.always_document
+                and not hasattr(value_func, AutoMDKeys.function.value)
+                and not hasattr(value_func, AutoMDKeys.hide_function.value)):
+            value_func = automd()(value_func)
 
-                for response_code, response in response_schemas.items():
-                    self.register_path(automd_spec,
-                                       key,
-                                       method,
-                                       response_code,
-                                       summary,
-                                       description,
-                                       parameter_schema,
-                                       response,
-                                       func_signature,
-                                       tags)
+        if hasattr(value_func, AutoMDKeys.function.value):
+            automd_spec_parameters: Dict = getattr(value_func, AutoMDKeys.function.value)
+            response_schemas: Dict = automd_spec_parameters.get("response_schemas")
+            parameter_schema: Dict = automd_spec_parameters.get("parameter_schema")
+            func_signature: Signature = automd_spec_parameters.get("func_signature")
+            summary: str = automd_spec_parameters.get("summary")
+            description: str = automd_spec_parameters.get("description")
+            tags: List[Dict] = automd_spec_parameters.get("tags")
+
+            for response_code, response in response_schemas.items():
+                self.register_path(automd_spec,
+                                   key,
+                                   method,
+                                   response_code,
+                                   summary,
+                                   description,
+                                   parameter_schema,
+                                   response,
+                                   func_signature,
+                                   tags)

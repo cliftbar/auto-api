@@ -227,7 +227,7 @@ class FloatResponse(ResponseObjectInterface):
         return mimetypes.MimeTypes().types_map[1][".txt"]
 
 
-def get_type_origin(key: Union[Type, type(Union)]) -> Type:
+def get_type_origin(key: Type) -> Type:
     origin: Type
     try:
         origin = typing.get_origin(key)
@@ -307,7 +307,8 @@ type_field_mapping: Dict[Any, Type[fields.Field]] = {
     getattr(Any, "_name", "Any._name"): fields.Raw,
     getattr(Any, "_gorg", "Any._gorg"): fields.Raw,
     Signature.empty: fields.Raw,
-    get_type_origin(Union): fields.Raw,
+    # Union is a special class that's hard to Hint properly
+    get_type_origin(Union): fields.Raw,  # noqa
     None: None
 }
 
@@ -360,7 +361,7 @@ def type_to_field(input_type: Any, **input_kwargs) -> fields.Field:
         value_field = type_to_field(dict_value_type)
         input_kwargs["keys"] = key_field
         input_kwargs["values"] = value_field
-    elif get_type_origin(input_type) == get_type_origin(Union):
+    elif get_type_origin(input_type) == get_type_origin(Union):  # noqa  Union is special and hard to Hint properly
         key_inner_args: List[Type] = []
         try:  # Try Python 3.8 method
             key_inner_args = list(typing.get_args(input_type))
